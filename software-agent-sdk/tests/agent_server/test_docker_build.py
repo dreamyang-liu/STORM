@@ -539,7 +539,7 @@ def test_build_with_prebuilt_sdist_preserves_tags_and_docker_args(tmp_path: Path
         git_ref="refs/heads/main",
         sdk_version="1.2.0",
         include_versioned_tag=True,
-        target="source-minimal",
+        target="source-minimal-storm",
         push=False,
         sdk_project_root=_default_sdk_project_root(),
         prebuilt_sdist=prebuilt_sdist,
@@ -568,7 +568,7 @@ def test_build_with_prebuilt_sdist_preserves_tags_and_docker_args(tmp_path: Path
     cmd, cwd = docker_calls[0]
     assert cwd == str(ctx)
     assert "--load" in cmd
-    assert "--target" in cmd and "source-minimal" in cmd
+    assert "--target" in cmd and "source-minimal-storm" in cmd
     assert "--build-arg" in cmd
     assert "BASE_IMAGE=python:3.12" in cmd
     for tag in opts.all_tags:
@@ -715,7 +715,7 @@ def test_build_with_telemetry_returns_parsed_buildkit_fields(tmp_path: Path):
         git_sha="abc1234567890",
         git_ref="refs/heads/main",
         image="ghcr.io/openhands/eval-agent-server",
-        target="source-minimal",
+        target="source-minimal-storm",
         push=True,
         sdk_project_root=_default_sdk_project_root(),
     )
@@ -775,7 +775,7 @@ def test_build_with_telemetry_preserves_telemetry_on_failure(tmp_path: Path):
         git_sha="abc1234567890",
         git_ref="refs/heads/main",
         image="ghcr.io/openhands/eval-agent-server",
-        target="source-minimal",
+        target="source-minimal-storm",
         push=True,
         sdk_project_root=_default_sdk_project_root(),
     )
@@ -838,7 +838,7 @@ def test_cache_export_modes(
         git_sha="abc1234567890",
         git_ref="refs/heads/main",
         image="ghcr.io/openhands/eval-agent-server",
-        target="source-minimal",
+        target="source-minimal-storm",
         push=True,
         sdk_project_root=_default_sdk_project_root(),
     )

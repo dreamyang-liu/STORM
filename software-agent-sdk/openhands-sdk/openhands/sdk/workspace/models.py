@@ -9,7 +9,7 @@ TargetType = Literal[
     "binary",
     "binary-minimal",
     "source",
-    "source-minimal",
+    "source-minimal-storm",
     "base-image-minimal",
     "base-image",
     "builder",

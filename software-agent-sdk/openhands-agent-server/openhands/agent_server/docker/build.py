@@ -2,7 +2,7 @@
 """
 Single-entry build helper for agent-server images.
 
-- Targets: binary | binary-minimal | source | source-minimal
+- Targets: binary | binary-minimal | source | source-minimal-storm
 - Multi-tagging via CUSTOM_TAGS (comma-separated)
 - Versioned tags for custom tags: {SDK_VERSION}-{CUSTOM_TAG}
 - Branch-scoped cache keys
@@ -40,7 +40,7 @@ VALID_TARGETS = {
     "binary",
     "binary-minimal",
     "source",
-    "source-minimal",
+    "source-minimal-storm",
     "base-image-minimal",
     "base-image",
     "builder",

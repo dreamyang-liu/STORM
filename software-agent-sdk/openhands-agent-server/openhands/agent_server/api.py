@@ -152,6 +152,23 @@ async def api_lifespan(api: FastAPI) -> AsyncIterator[None]:
     mark_initialization_complete()
     logger.info("Server initialization complete - ready to serve requests")
 
+    # Multiagent-sync state management hook: if MS_ENABLE env is set, initialize the
+    # State Manager for shared-workspace multi-agent coordination.
+    import os
+    if os.environ.get("MS_ENABLE", "").strip().lower() not in ("0", "false", "no", "off", ""):
+        try:
+            from openhands.agent_server.multiagent_sync import StateManager, install_manager_bridge
+            ms_workspace = os.environ.get("MS_WORKSPACE", "/workspace")
+            state_manager = StateManager(ms_workspace)
+            loop = asyncio.get_event_loop()
+            install_manager_bridge(state_manager, loop)
+            logger.info(
+                "State Manager initialized (workspace=%s, files=%d)",
+                ms_workspace, len(state_manager.files),
+            )
+        except Exception:
+            logger.error("State Manager initialization failed", exc_info=True)
+
     async with service:
         # Store the initialized service in app state for dependency injection
         api.state.conversation_service = service
