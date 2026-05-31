@@ -1,0 +1,470 @@
+"""Test agent JSON serialization with DiscriminatedUnionMixin."""
+
+import json
+from typing import cast
+from unittest.mock import Mock
+
+import mcp.types
+import pytest
+from pydantic import BaseModel
+
+from openhands.sdk.agent import Agent
+from openhands.sdk.agent.base import AgentBase
+from openhands.sdk.llm import LLM
+from openhands.sdk.mcp.client import MCPClient
+from openhands.sdk.mcp.tool import MCPToolDefinition
+from openhands.sdk.tool.tool import ToolDefinition
+from openhands.sdk.utils.models import OpenHandsModel
+
+
+def create_mock_mcp_tool(name: str) -> MCPToolDefinition:
+    # Create mock MCP tool and client
+    mock_mcp_tool = mcp.types.Tool(
+        name=name,
+        description=f"A test MCP tool named {name}",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Query parameter"}
+            },
+            "required": ["query"],
+        },
+    )
+    mock_client = Mock(spec=MCPClient)
+    tools = MCPToolDefinition.create(mock_mcp_tool, mock_client)
+    return tools[0]  # Extract single tool from sequence
+
+
+def test_agent_supports_polymorphic_json_serialization() -> None:
+    """Test that Agent supports polymorphic JSON serialization/deserialization."""
+    # Create a simple LLM instance and agent with empty tools
+    llm = LLM(model="test-model", usage_id="test-llm")
+    agent = Agent(llm=llm, tools=[])
+
+    # Serialize to JSON (excluding non-serializable fields)
+    agent_json = agent.model_dump_json()
+
+    # Deserialize from JSON using the base class
+    deserialized_agent = AgentBase.model_validate_json(agent_json)
+
+    # Should deserialize to the correct type and have same core fields
+    assert isinstance(deserialized_agent, Agent)
+    assert deserialized_agent.model_dump() == agent.model_dump()
+
+
+def test_mcp_tool_serialization():
+    tool = create_mock_mcp_tool("test_mcp_tool_serialization")
+    dumped = tool.model_dump_json()
+    loaded = ToolDefinition.model_validate_json(dumped)
+    assert loaded.model_dump_json() == dumped
+
+
+def test_mcp_config_exposed_with_expose_secrets_context() -> None:
+    """Test mcp_config serialization with expose_secrets=True context."""
+    # Create a simple LLM instance and agent with empty tools
+    llm = LLM(model="test-model", usage_id="test-llm")
+    mcp_config = {
+        "mcpServers": {
+            "dummy": {"command": "echo", "args": ["dummy-mcp"]},
+        }
+    }
+    agent = Agent(llm=llm, tools=[], mcp_config=cast(dict[str, object], mcp_config))
+
+    # Serialize to JSON with expose_secrets=True to include mcp_config
+    agent_dump = agent.model_dump(context={"expose_secrets": True})
+    assert agent_dump.get("mcp_config") == mcp_config
+    agent_json = agent.model_dump_json(context={"expose_secrets": True})
+
+    # Deserialize from JSON using the base class
+    deserialized_agent = AgentBase.model_validate_json(agent_json)
+
+    # Should deserialize to the correct type and have same core fields
+    assert isinstance(deserialized_agent, Agent)
+    assert deserialized_agent.mcp_config == mcp_config
+
+
+def test_agent_supports_polymorphic_field_json_serialization() -> None:
+    """Test that Agent supports polymorphic JSON serialization when used as a field."""
+
+    class Container(BaseModel):
+        agent: Agent  # Use direct Agent type instead of DiscriminatedUnionType
+
+    # Create container with agent
+    llm = LLM(model="test-model", usage_id="test-llm")
+    agent = Agent(llm=llm, tools=[])
+    container = Container(agent=agent)
+
+    # Serialize to JSON (excluding non-serializable fields)
+    container_json = container.model_dump_json()
+
+    # Deserialize from JSON
+    deserialized_container = Container.model_validate_json(container_json)
+
+    # Should preserve the agent type and core fields
+    assert isinstance(deserialized_container.agent, Agent)
+    assert deserialized_container.agent.model_dump() == agent.model_dump()
+
+
+def test_agent_supports_nested_polymorphic_json_serialization() -> None:
+    """Test that Agent supports nested polymorphic JSON serialization."""
+
+    class NestedContainer(BaseModel):
+        agents: list[Agent]  # Use direct Agent type
+
+    # Create container with multiple agents
+    llm1 = LLM(model="model-1", usage_id="test-llm")
+    llm2 = LLM(model="model-2", usage_id="test-llm")
+    agent1 = Agent(llm=llm1, tools=[])
+    agent2 = Agent(llm=llm2, tools=[])
+    container = NestedContainer(agents=[agent1, agent2])
+
+    # Serialize to JSON (excluding non-serializable fields)
+    container_json = container.model_dump_json()
+
+    # Deserialize from JSON
+    deserialized_container = NestedContainer.model_validate_json(container_json)
+
+    # Should preserve all agent types and core fields
+    assert len(deserialized_container.agents) == 2
+    assert isinstance(deserialized_container.agents[0], Agent)
+    assert isinstance(deserialized_container.agents[1], Agent)
+    assert deserialized_container.agents[0].model_dump() == agent1.model_dump()
+    assert deserialized_container.agents[1].model_dump() == agent2.model_dump()
+
+
+def test_agent_model_validate_json_dict() -> None:
+    """Test that Agent.model_validate works with dict from JSON."""
+    # Create agent
+    llm = LLM(model="test-model", usage_id="test-llm")
+    agent = Agent(llm=llm, tools=[])
+
+    # Serialize to JSON, then parse to dict
+    agent_json = agent.model_dump_json()
+    agent_dict = json.loads(agent_json)
+
+    # Deserialize from dict
+    deserialized_agent = AgentBase.model_validate(agent_dict)
+
+    assert deserialized_agent.model_dump() == agent.model_dump()
+    assert isinstance(deserialized_agent, Agent)
+
+
+def test_agent_fallback_behavior_json() -> None:
+    """Test that Agent handles unknown types gracefully in JSON."""
+    # Create JSON with unknown kind
+    agent_dict = {"llm": {"model": "test-model"}, "kind": "UnknownAgentType"}
+    agent_json = json.dumps(agent_dict)
+
+    # Should throw validation error
+    with pytest.raises(ValueError):
+        AgentBase.model_validate_json(agent_json)
+
+
+def test_agent_preserves_pydantic_parameters_json() -> None:
+    """Test that Agent preserves Pydantic parameters through JSON serialization."""
+    # Create agent with extra data
+    llm = LLM(model="test-model", usage_id="test-llm")
+    agent = Agent(llm=llm, tools=[])
+
+    # Serialize to JSON
+    agent_json = agent.model_dump_json()
+
+    # Deserialize from JSON
+    deserialized_agent = AgentBase.model_validate_json(agent_json)
+
+    assert deserialized_agent.model_dump() == agent.model_dump()
+    assert isinstance(deserialized_agent, Agent)
+
+
+def test_agent_type_annotation_works_json() -> None:
+    """Test that AgentType annotation works correctly with JSON."""
+    # Create agent
+    llm = LLM(model="test-model", usage_id="test-llm")
+    agent = Agent(llm=llm, tools=[])
+
+    # Use AgentType annotation
+    class TestModel(OpenHandsModel):
+        agent: AgentBase
+
+    model = TestModel(agent=agent)
+
+    # Serialize to JSON
+    model_json = model.model_dump_json()
+
+    # Deserialize from JSON
+    deserialized_model = TestModel.model_validate_json(model_json)
+
+    # Should work correctly
+    assert isinstance(deserialized_model.agent, Agent)
+    assert deserialized_model.agent.model_dump() == agent.model_dump()
+    assert deserialized_model.model_dump() == model.model_dump()
+
+
+def test_agent_type_annotation_on_basemodel_works_json() -> None:
+    """Test that AgentType annotation works correctly with JSON."""
+    # Create agent
+    llm = LLM(model="test-model", usage_id="test-llm")
+    agent = Agent(llm=llm, tools=[])
+
+    # Use AgentType annotation
+    class TestModel(BaseModel):
+        agent: AgentBase
+
+    model = TestModel(agent=agent)
+
+    # Serialize to JSON
+    model_json = model.model_dump_json()
+
+    # Deserialize from JSON
+    deserialized_model = TestModel.model_validate_json(model_json)
+
+    # Should work correctly
+    assert isinstance(deserialized_model.agent, Agent)
+    assert deserialized_model.agent.model_dump() == agent.model_dump()
+    assert deserialized_model.model_dump() == model.model_dump()
+
+
+def test_include_default_tools_serialization_default() -> None:
+    """Test that include_default_tools serializes correctly with default value."""
+    llm = LLM(model="test-model", usage_id="test-llm")
+    agent = Agent(llm=llm, tools=[])
+
+    # Serialize to JSON
+    agent_json = agent.model_dump_json()
+    agent_dict = json.loads(agent_json)
+
+    # Default should include both FinishTool and ThinkTool as strings
+    assert "include_default_tools" in agent_dict
+    assert set(agent_dict["include_default_tools"]) == {"FinishTool", "ThinkTool"}
+
+
+def test_include_default_tools_serialization_empty() -> None:
+    """Test that include_default_tools serializes correctly when empty."""
+    llm = LLM(model="test-model", usage_id="test-llm")
+    agent = Agent(llm=llm, tools=[], include_default_tools=[])
+
+    # Serialize to JSON
+    agent_json = agent.model_dump_json()
+    agent_dict = json.loads(agent_json)
+
+    # Should be empty list
+    assert agent_dict["include_default_tools"] == []
+
+
+def test_include_default_tools_serialization_partial() -> None:
+    """Test that include_default_tools serializes correctly with partial list."""
+    llm = LLM(model="test-model", usage_id="test-llm")
+    agent = Agent(llm=llm, tools=[], include_default_tools=["FinishTool"])
+
+    # Serialize to JSON
+    agent_json = agent.model_dump_json()
+    agent_dict = json.loads(agent_json)
+
+    # Should be serialized as string
+    assert agent_dict["include_default_tools"] == ["FinishTool"]
+
+
+def test_include_default_tools_deserialization_roundtrip() -> None:
+    """Test that include_default_tools deserializes correctly after round-trip."""
+    llm = LLM(model="test-model", usage_id="test-llm")
+    agent = Agent(llm=llm, tools=[], include_default_tools=["FinishTool"])
+
+    # Serialize to JSON
+    agent_json = agent.model_dump_json()
+
+    # Deserialize from JSON
+    deserialized_agent = AgentBase.model_validate_json(agent_json)
+
+    # Should have the same include_default_tools
+    assert isinstance(deserialized_agent, Agent)
+    assert deserialized_agent.include_default_tools == ["FinishTool"]
+
+
+def test_include_default_tools_deserialization_all_tools() -> None:
+    """Test that include_default_tools deserializes correctly with all tools."""
+    llm = LLM(model="test-model", usage_id="test-llm")
+    agent = Agent(llm=llm, tools=[], include_default_tools=["FinishTool", "ThinkTool"])
+
+    # Serialize to JSON
+    agent_json = agent.model_dump_json()
+
+    # Deserialize from JSON
+    deserialized_agent = AgentBase.model_validate_json(agent_json)
+
+    # Should have both tools
+    assert isinstance(deserialized_agent, Agent)
+    assert set(deserialized_agent.include_default_tools) == {"FinishTool", "ThinkTool"}
+
+
+def test_include_default_tools_deserialization_empty() -> None:
+    """Test that include_default_tools deserializes correctly when empty."""
+    llm = LLM(model="test-model", usage_id="test-llm")
+    agent = Agent(llm=llm, tools=[], include_default_tools=[])
+
+    # Serialize to JSON
+    agent_json = agent.model_dump_json()
+
+    # Deserialize from JSON
+    deserialized_agent = AgentBase.model_validate_json(agent_json)
+
+    # Should be empty
+    assert isinstance(deserialized_agent, Agent)
+    assert deserialized_agent.include_default_tools == []
+
+
+def test_include_default_tools_deserialization_from_dict() -> None:
+    """Test that include_default_tools deserializes correctly from dict."""
+    agent_dict = {
+        "llm": {"model": "test-model", "usage_id": "test-llm"},
+        "tools": [],
+        "include_default_tools": ["ThinkTool"],
+        "kind": "Agent",
+    }
+
+    # Deserialize from dict
+    agent = AgentBase.model_validate(agent_dict)
+
+    # Should have ThinkTool
+    assert isinstance(agent, Agent)
+    assert agent.include_default_tools == ["ThinkTool"]
+
+
+# ============================================================================
+# MCP Config Encryption/Decryption Tests
+# ============================================================================
+
+
+def test_mcp_config_redacted_by_default() -> None:
+    """Test that mcp_config is omitted when serialized without context."""
+
+    llm = LLM(model="test-model", usage_id="test-llm")
+    mcp_config = {"mcpServers": {"fetch": {"command": "uvx", "args": ["mcp-fetch"]}}}
+    agent = Agent(llm=llm, tools=[], mcp_config=cast(dict[str, object], mcp_config))
+
+    # Serialize without any context - should omit mcp_config entirely
+    agent_dump = agent.model_dump()
+    assert "mcp_config" not in agent_dump  # Omitted, not None
+    assert "encrypted_mcp_config" not in agent_dump
+
+
+def test_mcp_config_encrypted_with_cipher_context() -> None:
+    """Test that mcp_config is encrypted when cipher is in context."""
+    from openhands.sdk.utils.cipher import Cipher
+
+    llm = LLM(model="test-model", usage_id="test-llm")
+    mcp_config = {"mcpServers": {"fetch": {"command": "uvx", "args": ["mcp-fetch"]}}}
+    agent = Agent(llm=llm, tools=[], mcp_config=cast(dict[str, object], mcp_config))
+    cipher = Cipher(secret_key="test-encryption-key")
+
+    # Serialize with cipher - should have encrypted_mcp_config
+    agent_dump = agent.model_dump(context={"cipher": cipher})
+
+    # mcp_config should be omitted, encrypted_mcp_config should be present
+    assert "mcp_config" not in agent_dump  # Omitted, not None
+    assert "encrypted_mcp_config" in agent_dump
+    assert isinstance(agent_dump["encrypted_mcp_config"], str)
+
+
+def test_mcp_config_encryption_decryption_roundtrip() -> None:
+    """Test full roundtrip: encrypt on serialize, decrypt on deserialize."""
+    from openhands.sdk.utils.cipher import Cipher
+
+    llm = LLM(model="test-model", usage_id="test-llm")
+    mcp_config = {
+        "mcpServers": {
+            "fetch": {"command": "uvx", "args": ["mcp-fetch"]},
+            "git": {"command": "uvx", "args": ["mcp-git", "--repo", "/tmp/test"]},
+        }
+    }
+    agent = Agent(llm=llm, tools=[], mcp_config=cast(dict[str, object], mcp_config))
+    cipher = Cipher(secret_key="test-encryption-key-roundtrip")
+
+    # Serialize with cipher
+    agent_json = agent.model_dump_json(context={"cipher": cipher})
+
+    # Deserialize with same cipher
+    restored_agent = AgentBase.model_validate_json(
+        agent_json, context={"cipher": cipher}
+    )
+
+    # mcp_config should be restored correctly
+    assert isinstance(restored_agent, Agent)
+    assert restored_agent.mcp_config == mcp_config
+
+
+def test_mcp_config_decryption_without_cipher_logs_warning() -> None:
+    """Test that deserializing encrypted_mcp_config without cipher logs warning."""
+    from openhands.sdk.utils.cipher import Cipher
+
+    llm = LLM(model="test-model", usage_id="test-llm")
+    mcp_config = {"mcpServers": {"fetch": {"command": "uvx"}}}
+    agent = Agent(llm=llm, tools=[], mcp_config=cast(dict[str, object], mcp_config))
+    cipher = Cipher(secret_key="test-key")
+
+    # Serialize with cipher
+    agent_json = agent.model_dump_json(context={"cipher": cipher})
+
+    # Deserialize WITHOUT cipher - mcp_config should be empty (lost)
+    restored_agent = AgentBase.model_validate_json(agent_json)
+
+    assert isinstance(restored_agent, Agent)
+    # mcp_config should be empty dict (default) since we couldn't decrypt
+    assert restored_agent.mcp_config == {}
+
+
+def test_mcp_config_decryption_with_wrong_cipher() -> None:
+    """Test that decryption with wrong cipher gracefully fails."""
+    from openhands.sdk.utils.cipher import Cipher
+
+    llm = LLM(model="test-model", usage_id="test-llm")
+    mcp_config = {"mcpServers": {"fetch": {"command": "uvx"}}}
+    agent = Agent(llm=llm, tools=[], mcp_config=cast(dict[str, object], mcp_config))
+
+    cipher_a = Cipher(secret_key="cipher-key-a")
+    cipher_b = Cipher(secret_key="cipher-key-b")
+
+    # Serialize with cipher_a
+    agent_json = agent.model_dump_json(context={"cipher": cipher_a})
+
+    # Deserialize with cipher_b - decryption fails gracefully
+    restored_agent = AgentBase.model_validate_json(
+        agent_json, context={"cipher": cipher_b}
+    )
+
+    assert isinstance(restored_agent, Agent)
+    # mcp_config should be empty (decryption failed)
+    assert restored_agent.mcp_config == {}
+
+
+def test_mcp_config_backward_compatibility_plaintext() -> None:
+    """Test that agents serialized with plaintext mcp_config still work."""
+    # Simulate old-format JSON with plaintext mcp_config
+    mcp_config = {"mcpServers": {"fetch": {"command": "uvx", "args": ["fetch"]}}}
+    agent_dict = {
+        "llm": {"model": "test-model", "usage_id": "test-llm"},
+        "tools": [],
+        "mcp_config": mcp_config,
+        "kind": "Agent",
+    }
+
+    # Deserialize - should work without cipher
+    agent = AgentBase.model_validate(agent_dict)
+
+    assert isinstance(agent, Agent)
+    assert agent.mcp_config == mcp_config
+
+
+def test_mcp_config_empty_not_encrypted() -> None:
+    """Test that empty mcp_config doesn't create encrypted_mcp_config."""
+    from openhands.sdk.utils.cipher import Cipher
+
+    llm = LLM(model="test-model", usage_id="test-llm")
+    agent = Agent(llm=llm, tools=[], mcp_config={})  # Empty config
+    cipher = Cipher(secret_key="test-key")
+
+    # Serialize with cipher - should NOT have encrypted_mcp_config for empty
+    agent_dump = agent.model_dump(context={"cipher": cipher})
+
+    # Empty dict is omitted entirely (default value), not serialized or encrypted
+    assert "mcp_config" not in agent_dump
+    assert "encrypted_mcp_config" not in agent_dump
