@@ -1,0 +1,22 @@
+diff --git a/packages/protocol/contracts/team/airdrop/ERC20Airdrop2.sol b/packages/protocol/contracts/team/airdrop/ERC20Airdrop2.sol
+index 4ae538b..232f3cc 100644
+--- a/packages/protocol/contracts/team/airdrop/ERC20Airdrop2.sol
++++ b/packages/protocol/contracts/team/airdrop/ERC20Airdrop2.sol
+@@ -26,6 +26,8 @@ contract ERC20Airdrop2 is MerkleClaimable {
+ 
+     /// @notice Length of the withdrawal window.
+     uint64 public withdrawalWindow;
++    
++    uint256 public constant WITHDRAWAL_GRACE_PERIOD = 30 days;
+ 
+     uint256[45] private __gap;
+ 
+@@ -37,7 +39,7 @@ contract ERC20Airdrop2 is MerkleClaimable {
+     error WITHDRAWALS_NOT_ONGOING();
+ 
+     modifier ongoingWithdrawals() {
+-        if (claimEnd > block.timestamp || claimEnd + withdrawalWindow < block.timestamp) {
++        if (claimEnd > block.timestamp || claimEnd + withdrawalWindow + WITHDRAWAL_GRACE_PERIOD < block.timestamp) {
+             revert WITHDRAWALS_NOT_ONGOING();
+         }
+         _;

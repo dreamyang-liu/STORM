@@ -1,0 +1,32 @@
+[package]
+name = "anvil-veto-allow-all"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+exclude.workspace = true
+
+[dependencies]
+# Errors
+anyhow = { workspace = true }
+
+# HTTP
+http = { workspace = true }
+reqwest = { version = "0.12.9", default-features = false, features = ["json", "rustls-tls"] }
+
+# Async runtime
+tokio = { workspace = true, features = ["macros", "net", "rt-multi-thread", "time"] }
+
+# Logging
+tracing = { workspace = true }
+tracing-subscriber = { version = "0.3.20", default-features = false, features = ["env-filter", "fmt", "std"] }
+
+# Serialization
+serde_json = { version = "1.0.145", default-features = false, features = ["std"] }
+
+# Workspace crates
+veto-config = { workspace = true }
+veto-core = { workspace = true }

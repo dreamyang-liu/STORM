@@ -1,0 +1,16 @@
+diff --git a/contracts/Curves.sol b/contracts/Curves.sol
+index 817c79b..41a05ec 100644
+--- a/contracts/Curves.sol
++++ b/contracts/Curves.sol
+@@ -321,6 +321,11 @@ contract Curves is CurvesErrors, Security {
+         curvesTokenBalance[curvesTokenSubject][from] = curvesTokenBalance[curvesTokenSubject][from] - amount;
+         curvesTokenBalance[curvesTokenSubject][to] = curvesTokenBalance[curvesTokenSubject][to] + amount;
+ 
++        if (from != to && address(feeRedistributor) != address(0) && feesEconomics.holdersFeePercent > 0) {
++            feeRedistributor.onBalanceChange(curvesTokenSubject, from);
++            feeRedistributor.onBalanceChange(curvesTokenSubject, to);
++        }
++
+         emit Transfer(curvesTokenSubject, from, to, amount);
+     }
+ 

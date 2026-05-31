@@ -1,0 +1,74 @@
+# 2024-05-arbitrum-foundation Report
+
+## [H-01] Adversary can make honest parties unable to retrieve their assertion stakes if the required amount is decreased
+
+*Submitted by xuwinnie, also found by Ch_301*
+
+When the required stake (to create a new assertions) is updated to a lower amount, adversary can make the honest party unable to retrieve their assertion stakes.
+
+```
+     A -- B -- C -- D(latest confirmed) -- E
+```
+
+Suppose the initial stake amount is 1000 ETH, and till now no invalid assertions have been made. (A, B, C, D, E are all valid and made by the same validator). The rollup contract should hold 1000 ETH now.
+
+```
+     A -- B -- C -- D(latest confirmed) -- E
+                                        \
+                                         \ F(invalid)
+```
+
+Then, the admin update the required stake to 700 ETH, Alice made an invalid assertion F. Since its parent D was created before the update, Alice will still need to stake 1000 ETH, and the 1000 ETH will be sent to loserStakeEscrow.
+
+```
+            if (!getAssertionStorage(newAssertionHash).isFirstChild) {
+
+                // only 1 of the children can be confirmed and get their stake refunded
+                // so we send the other children's stake to the loserStakeEscrow
+                IERC20(stakeToken).safeTransfer(loserStakeEscrow, assertion.beforeStateData.configData.requiredStake);
+            }
+```
+
+```
+     A -- B -- C -- D(latest confirmed) -- E
+                                        \
+
+                                         \ F -- G
+```
+
+(a) Alice creates F’s children, G. Now, only 700 ETH of stake is needed. However, as the comment suggests, no refund will be made since G’s ancestor could need more stake.
+
+```
+            // requiredStake is user supplied, will be verified against configHash later
+            // the prev's requiredStake is used to make sure all children have the same stake
+            // the staker may have more than enough stake, and the entire stake will be locked
+            // we cannot do a refund here because the staker may be staker on an unconfirmed ancestor that requires more stake
+            // excess stake can be removed by calling reduceDeposit when the staker is inactive
+            require(amountStaked(msg.sender) >= assertion.beforeStateData.configData.requiredStake, "INSUFFICIENT_STAKE");
+```
+
+(b) To bypass the limit in (a), Alice calls her friend Bob to make the assertion G instead , Bob will only need to stake 700 ETH now. The rollup contract currently holds 1700 ETH. Then, Alice can withdraw her stake since she is no longer active. (her last staked assertion have a child)
+
+```
+        function requireInactiveStaker(address stakerAddress) internal view {
+            require(isStaked(stakerAddress), "NOT_STAKED");
+            // A staker is inactive if
+            // a) their last staked assertion is the latest confirmed assertion
+            // b) their last staked assertion have a child
+            bytes32 lastestAssertion = latestStakedAssertion(stakerAddress);
+            bool isLatestConfirmed = lastestAssertion == latestConfirmed();
+            bool haveChild = getAssertionStorage(lastestAssertion).firstChildBlock > 0;
+            require(isLatestConfirmed || haveChild, "STAKE_ACTIVE");
+        }
+```
+
+Now the rollup contract holds 700 ETH, which means it is insolvent. The honest validator cannot withdraw her original stake. (700 < 1000)
+
+Ensure the following
+
+1. A staker is considered inactive only if her last staked assertion is confirmed.
+2. A staker can only stake on her last staked assertion’s descendants. (otherwise Alice can switch to the correct branch and withdraw)
+
+**gzeoneth (Arbitrum) confirmed and commented:**
+
+> Patched with https://github.com/OffchainLabs/bold/pull/655.

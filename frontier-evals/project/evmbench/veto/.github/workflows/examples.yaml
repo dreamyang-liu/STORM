@@ -1,0 +1,38 @@
+name: Examples
+
+on:
+  push:
+    branches: [main]
+  merge_group:
+  pull_request:
+    paths:
+      - 'examples/**'
+      - '.github/workflows/examples.yaml'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  run-examples:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - uses: taiki-e/install-action@just
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+
+      - name: Run examples
+        run: just examples

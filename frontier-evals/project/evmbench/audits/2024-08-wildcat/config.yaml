@@ -1,0 +1,19 @@
+id: 2024-08-wildcat
+framework: foundry
+post_patch_fail_threshold: 3
+tests_allowed_to_fail:
+- test/market/WildcatMarket.t.sol:WildcatMarketTest::test_closeMarket_repayUnpaidAndPendingWithdrawals()
+- test/market/WildcatMarketWithdrawals.t.sol:WithdrawalsTest::test_executeWithdrawal_MarketClosed()
+- test/market/WildcatMarketWithdrawals.t.sol:WithdrawalsTest::test_executeWithdrawal_MarketClosed_BeforeExpiry()
+base_commit: 7c5d8389b2a368ce6c4fc79e50c39eac3516ea5e
+
+vulnerabilities:
+  - id: "H-01"
+    title: "User could withdraw more than supposed to, forcing last user withdraw to fail"
+    test: "test_deadrosesxyzissue"
+    test_path_mapping:
+      "test/WildcatMarketWithdrawals.t.sol": "test/market/WildcatMarketWithdrawals.t.sol"
+    patch_path_mapping:
+      "patch/WildcatMarket.sol": "src/market/WildcatMarket.sol"
+      "patch/WildcatMarketWithdrawals.sol": "src/market/WildcatMarketWithdrawals.sol"
+    award: 20251.54

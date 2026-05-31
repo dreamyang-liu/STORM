@@ -1,0 +1,21 @@
+diff --git a/vault/src/Vault.sol b/vault/src/Vault.sol
+index e92ecaf..04d8758 100644
+--- a/vault/src/Vault.sol
++++ b/vault/src/Vault.sol
+@@ -394,11 +396,14 @@ contract Vault is ERC4626, ERC20Permit, ILiquidationSource, Ownable {
+   function mintYieldFee(uint256 _shares, address _recipient) external {
+     _requireVaultCollateralized();
+     if (_shares > _yieldFeeTotalSupply) revert YieldFeeGTAvailable(_shares, _yieldFeeTotalSupply);
++    if (_recipient != _yieldFeeRecipient) {
++      // Intentionally ignore the provided recipient to prevent unauthorized mints.
++    }
+ 
+     _yieldFeeTotalSupply -= _shares;
+-    _mint(_recipient, _shares);
++    _mint(_yieldFeeRecipient, _shares);
+ 
+-    emit MintYieldFee(msg.sender, _recipient, _shares);
++    emit MintYieldFee(msg.sender, _yieldFeeRecipient, _shares);
+   }
+ 
+   /* ============ Deposit Functions ============ */

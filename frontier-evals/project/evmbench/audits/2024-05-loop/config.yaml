@@ -1,0 +1,7 @@
+id: 2024-05-loop
+
+vulnerabilities:
+  - id: "H-01"
+    title: "Availability of deposit invariant can be bypassed"
+    award: 213.33
+  

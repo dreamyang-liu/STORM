@@ -1,0 +1,46 @@
+diff --git a/src/market/WildcatMarket.sol b/src/market/WildcatMarket.sol
+index 10486ac..d152c9c 100644
+--- a/src/market/WildcatMarket.sol
++++ b/src/market/WildcatMarket.sol
+@@ -268,6 +268,25 @@ contract WildcatMarket is
+         availableLiquidity -= normalizedAmountPaid;
+         _withdrawalData.batches[expiry] = batch;
+       }
++      // Remove the pending batch to ensure new withdrawals are not
++      // added to it after the market is closed.
++      state.pendingWithdrawalExpiry = 0;
++      emit_WithdrawalBatchExpired(
++        expiry,
++        batch.scaledTotalAmount,
++        batch.scaledAmountBurned,
++        batch.normalizedAmountPaid
++      );
++      emit_WithdrawalBatchClosed(expiry);
++
++      // If the batch expiry is at the time of the market's closure, create
++      // a new empty batch that expires in one second to ensure new batches
++      // aren't created after the market is closed with the same expiry.
++      if (expiry == block.timestamp) {
++        uint32 newExpiry = expiry + 1;
++        emit_WithdrawalBatchCreated(newExpiry);
++        state.pendingWithdrawalExpiry = newExpiry;
++      }
+     }
+ 
+     uint256 numBatches = _withdrawalData.unpaidBatches.length();
+diff --git a/src/market/WildcatMarketWithdrawals.sol b/src/market/WildcatMarketWithdrawals.sol
+index 3aeffd9..68d5eba 100644
+--- a/src/market/WildcatMarketWithdrawals.sol
++++ b/src/market/WildcatMarketWithdrawals.sol
+@@ -235,10 +235,7 @@ contract WildcatMarketWithdrawals is WildcatMarketBase {
+     uint baseCalldataSize
+   ) internal returns (uint256) {
+     WithdrawalBatch memory batch = _withdrawalData.batches[expiry];
+-    // If the market is closed, allow withdrawal prior to expiry.
+-    if (expiry >= block.timestamp && !state.isClosed) {
+-      revert_WithdrawalBatchNotExpired();
+-    }
++    if (expiry == state.pendingWithdrawalExpiry) revert_WithdrawalBatchNotExpired();
+ 
+     AccountWithdrawalStatus storage status = _withdrawalData.accountStatuses[expiry][
+       accountAddress

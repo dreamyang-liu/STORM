@@ -1,0 +1,7 @@
+id: 2024-03-gitcoin
+
+vulnerabilities:
+  - id: "H-01"
+    title: "userTotalStaked invariant will be broken due to vulnerable implementations in release()"
+    award: 0.0
+

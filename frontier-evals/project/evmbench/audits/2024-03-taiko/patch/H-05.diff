@@ -1,0 +1,34 @@
+diff --git a/packages/protocol/contracts/team/TimelockTokenPool.sol b/packages/protocol/contracts/team/TimelockTokenPool.sol
+index 44850ab..6b53b2e 100644
+--- a/packages/protocol/contracts/team/TimelockTokenPool.sol
++++ b/packages/protocol/contracts/team/TimelockTokenPool.sol
+@@ -79,7 +79,10 @@ contract TimelockTokenPool is EssentialContract {
+     /// @notice Mapping of recipient address to grant information.
+     mapping(address recipient => Recipient receipt) public recipients;
+ 
+-    uint128[44] private __gap;
++    /// @notice Tracks used withdraw signatures to prevent replay.
++    mapping(bytes32 sigHash => bool used) private usedWithdrawSignatures;
++
++    uint128[43] private __gap;
+ 
+     /// @notice Emitted when a grant is made.
+     /// @param recipient The grant recipient address.
+@@ -102,6 +105,7 @@ contract TimelockTokenPool is EssentialContract {
+     error INVALID_GRANT();
+     error INVALID_PARAM();
+     error NOTHING_TO_VOID();
++    error SIGNATURE_ALREADY_USED();
+ 
+     /// @notice Initializes the contract.
+     /// @param _owner The owner address.
+@@ -169,6 +173,9 @@ contract TimelockTokenPool is EssentialContract {
+         if (_to == address(0)) revert INVALID_PARAM();
+         bytes32 hash = keccak256(abi.encodePacked("Withdraw unlocked Taiko token to: ", _to));
+         address recipient = ECDSA.recover(hash, _sig);
++        bytes32 sigHash = keccak256(_sig);
++        if (usedWithdrawSignatures[sigHash]) revert SIGNATURE_ALREADY_USED();
++        usedWithdrawSignatures[sigHash] = true;
+         _withdraw(recipient, _to);
+     }
+

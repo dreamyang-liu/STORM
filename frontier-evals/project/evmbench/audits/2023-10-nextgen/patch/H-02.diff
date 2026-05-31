@@ -1,0 +1,64 @@
+diff --git a/hardhat/smart-contracts/AuctionDemo.sol b/hardhat/smart-contracts/AuctionDemo.sol
+index 95533fb..d4e8f62 100644
+--- a/hardhat/smart-contracts/AuctionDemo.sol
++++ b/hardhat/smart-contracts/AuctionDemo.sol
+@@ -102,17 +102,19 @@ contract auctionDemo is Ownable {
+     // claim Token After Auction
+ 
+     function claimAuction(uint256 _tokenid) public WinnerOrAdminRequired(_tokenid,this.claimAuction.selector){
+-        require(block.timestamp >= minter.getAuctionEndTime(_tokenid) && auctionClaim[_tokenid] == false && minter.getAuctionStatus(_tokenid) == true);
++        require(block.timestamp > minter.getAuctionEndTime(_tokenid) && auctionClaim[_tokenid] == false && minter.getAuctionStatus(_tokenid) == true);
+         auctionClaim[_tokenid] = true;
+         uint256 highestBid = returnHighestBid(_tokenid);
+         address ownerOfToken = IERC721(gencore).ownerOf(_tokenid);
+         address highestBidder = returnHighestBidder(_tokenid);
+         for (uint256 i=0; i< auctionInfoData[_tokenid].length; i ++) {
+             if (auctionInfoData[_tokenid][i].bidder == highestBidder && auctionInfoData[_tokenid][i].bid == highestBid && auctionInfoData[_tokenid][i].status == true) {
++                auctionInfoData[_tokenid][i].status = false;
+                 IERC721(gencore).safeTransferFrom(ownerOfToken, highestBidder, _tokenid);
+                 (bool success, ) = payable(owner()).call{value: highestBid}("");
+                 emit ClaimAuction(owner(), _tokenid, success, highestBid);
+             } else if (auctionInfoData[_tokenid][i].status == true) {
++                auctionInfoData[_tokenid][i].status = false;
+                 (bool success, ) = payable(auctionInfoData[_tokenid][i].bidder).call{value: auctionInfoData[_tokenid][i].bid}("");
+                 emit Refund(auctionInfoData[_tokenid][i].bidder, _tokenid, success, highestBid);
+             } else {}
+@@ -148,4 +150,4 @@ contract auctionDemo is Ownable {
+         return auctionInfoData[_tokenid];
+     }
+ 
+-}
+\ No newline at end of file
++}
+diff --git a/smart-contracts/AuctionDemo.sol b/smart-contracts/AuctionDemo.sol
+index 95533fb..d4e8f62 100644
+--- a/smart-contracts/AuctionDemo.sol
++++ b/smart-contracts/AuctionDemo.sol
+@@ -102,17 +102,19 @@ contract auctionDemo is Ownable {
+     // claim Token After Auction
+ 
+     function claimAuction(uint256 _tokenid) public WinnerOrAdminRequired(_tokenid,this.claimAuction.selector){
+-        require(block.timestamp >= minter.getAuctionEndTime(_tokenid) && auctionClaim[_tokenid] == false && minter.getAuctionStatus(_tokenid) == true);
++        require(block.timestamp > minter.getAuctionEndTime(_tokenid) && auctionClaim[_tokenid] == false && minter.getAuctionStatus(_tokenid) == true);
+         auctionClaim[_tokenid] = true;
+         uint256 highestBid = returnHighestBid(_tokenid);
+         address ownerOfToken = IERC721(gencore).ownerOf(_tokenid);
+         address highestBidder = returnHighestBidder(_tokenid);
+         for (uint256 i=0; i< auctionInfoData[_tokenid].length; i ++) {
+             if (auctionInfoData[_tokenid][i].bidder == highestBidder && auctionInfoData[_tokenid][i].bid == highestBid && auctionInfoData[_tokenid][i].status == true) {
++                auctionInfoData[_tokenid][i].status = false;
+                 IERC721(gencore).safeTransferFrom(ownerOfToken, highestBidder, _tokenid);
+                 (bool success, ) = payable(owner()).call{value: highestBid}("");
+                 emit ClaimAuction(owner(), _tokenid, success, highestBid);
+             } else if (auctionInfoData[_tokenid][i].status == true) {
++                auctionInfoData[_tokenid][i].status = false;
+                 (bool success, ) = payable(auctionInfoData[_tokenid][i].bidder).call{value: auctionInfoData[_tokenid][i].bid}("");
+                 emit Refund(auctionInfoData[_tokenid][i].bidder, _tokenid, success, highestBid);
+             } else {}
+@@ -148,4 +150,4 @@ contract auctionDemo is Ownable {
+         return auctionInfoData[_tokenid];
+     }
+ 
+-}
+\ No newline at end of file
++}

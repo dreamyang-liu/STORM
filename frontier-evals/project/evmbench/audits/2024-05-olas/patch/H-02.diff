@@ -1,0 +1,106 @@
+diff --git a/tokenomics/contracts/staking/GnosisDepositProcessorL1.sol b/tokenomics/contracts/staking/GnosisDepositProcessorL1.sol
+index 63af9e0..0fde4b6 100644
+--- a/tokenomics/contracts/staking/GnosisDepositProcessorL1.sol
++++ b/tokenomics/contracts/staking/GnosisDepositProcessorL1.sol
+@@ -25,6 +25,7 @@ interface IBridge {
+     function messageSender() external returns (address);
+ }
+ 
++
+ /// @title GnosisDepositProcessorL1 - Smart contract for sending tokens and data via Gnosis bridge from L1 to L2 and processing data received from L2.
+ /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
+ /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
+@@ -59,38 +60,34 @@ contract GnosisDepositProcessorL1 is DefaultDepositProcessorL1 {
+             revert IncorrectDataLength(BRIDGE_PAYLOAD_LENGTH, bridgePayload.length);
+         }
+ 
+-        // Transfer OLAS together with message, or just a message
+-        if (transferAmount > 0) {
+-            // Approve tokens for the bridge contract
+-            IToken(olas).approve(l1TokenRelayer, transferAmount);
++        // Assemble AMB data payload
++        bytes memory data = abi.encodeWithSelector(RECEIVE_MESSAGE, abi.encode(targets, stakingIncentives));
+ 
+-            bytes memory data = abi.encode(targets, stakingIncentives);
+-            IBridge(l1TokenRelayer).relayTokensAndCall(olas, l2TargetDispenser, transferAmount, data);
++        // In the current configuration, maxGasPerTx is set to 4000000 on Ethereum and 2000000 on Gnosis Chain.
++        // Source: https://docs.gnosischain.com/bridges/Token%20Bridge/amb-bridge#how-to-check-if-amb-is-down-not-relaying-message
++        uint256 gasLimitMessage = abi.decode(bridgePayload, (uint256));
+ 
+-            sequence = stakingBatchNonce;
+-        } else {
+-            // Assemble AMB data payload
+-            bytes memory data = abi.encodeWithSelector(RECEIVE_MESSAGE, abi.encode(targets, stakingIncentives));
+-
+-            // In the current configuration, maxGasPerTx is set to 4000000 on Ethereum and 2000000 on Gnosis Chain.
+-            // Source: https://docs.gnosischain.com/bridges/Token%20Bridge/amb-bridge#how-to-check-if-amb-is-down-not-relaying-message
+-            uint256 gasLimitMessage = abi.decode(bridgePayload, (uint256));
++        // Check for zero value
++        if (gasLimitMessage == 0) {
++            revert ZeroValue();
++        }
+ 
+-            // Check for zero value
+-            if (gasLimitMessage == 0) {
+-                revert ZeroValue();
+-            }
++        // Check for the max gas limit
++        if (gasLimitMessage > MESSAGE_GAS_LIMIT) {
++            revert Overflow(gasLimitMessage, MESSAGE_GAS_LIMIT);
++        }
+ 
+-            // Check for the max gas limit
+-            if (gasLimitMessage > MESSAGE_GAS_LIMIT) {
+-                revert Overflow(gasLimitMessage, MESSAGE_GAS_LIMIT);
+-            }
++        // Transfer OLAS with an empty payload; staking data must be sent via AMB.
++        if (transferAmount > 0) {
++            // Approve tokens for the bridge contract
++            IToken(olas).approve(l1TokenRelayer, transferAmount);
++            IBridge(l1TokenRelayer).relayTokensAndCall(olas, l2TargetDispenser, transferAmount, "");
++        }
+ 
+-            // Send message to L2
+-            bytes32 iMsg = IBridge(l1MessageRelayer).requireToPassMessage(l2TargetDispenser, data, gasLimitMessage);
++        // Send message to L2 via AMB
++        bytes32 iMsg = IBridge(l1MessageRelayer).requireToPassMessage(l2TargetDispenser, data, gasLimitMessage);
+ 
+-            sequence = uint256(iMsg);
+-        }
++        sequence = uint256(iMsg);
+     }
+ 
+     /// @dev Process message received from L2.
+@@ -102,4 +99,4 @@ contract GnosisDepositProcessorL1 is DefaultDepositProcessorL1 {
+         // Process the data
+         _receiveMessage(msg.sender, l2Dispenser, data);
+     }
+-}
+\ No newline at end of file
++}
+diff --git a/tokenomics/contracts/staking/GnosisTargetDispenserL2.sol b/tokenomics/contracts/staking/GnosisTargetDispenserL2.sol
+index 88d22b0..e36be48 100644
+--- a/tokenomics/contracts/staking/GnosisTargetDispenserL2.sol
++++ b/tokenomics/contracts/staking/GnosisTargetDispenserL2.sol
+@@ -19,6 +19,7 @@ interface IBridge {
+     function messageSender() external returns (address);
+ }
+ 
++
+ /// @title GnosisTargetDispenserL2 - Smart contract for processing tokens and data received on Gnosis L2, and data sent back to L1.
+ /// @author Aleksandr Kuperman - <aleksandr.kuperman@valory.xyz>
+ /// @author Andrey Lebedev - <andrey.lebedev@valory.xyz>
+@@ -102,7 +103,9 @@ contract GnosisTargetDispenserL2 is DefaultTargetDispenserL2 {
+             revert TargetRelayerOnly(msg.sender, l2TokenRelayer);
+         }
+ 
+-        // Process the data
+-        _receiveMessage(l2MessageRelayer, l1DepositProcessor, data);
++        // Reject bridged token payloads; staking data must arrive via AMB.
++        if (data.length != 0) {
++            revert IncorrectDataLength(0, data.length);
++        }
+     }
+-}
+\ No newline at end of file
++}

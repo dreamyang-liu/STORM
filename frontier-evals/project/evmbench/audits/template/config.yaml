@@ -1,0 +1,12 @@
+id: ID
+framework: <foundry, hardhat>
+base_commit: <commit>
+
+vulnerabilities:
+  - id: "H-01"
+    title: "<title>"
+    test: "<test>"
+    test_path_mapping:
+      "test/Test.t.sol": "test/Test.t.sol"
+    patch_path_mapping:
+      "patch/Patch.sol": "src/Patch.sol"

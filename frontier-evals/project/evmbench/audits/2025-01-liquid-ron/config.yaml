@@ -1,0 +1,20 @@
+id: 2025-01-liquid-ron
+framework: foundry
+post_patch_fail_threshold: 4
+tests_allowed_to_fail:
+- test/LiquidRon.admin.t.sol:LiquidRonTest::test_admin_fetch_operator_fee(uint88)
+- test/LiquidRon.admin.t.sol:LiquidRonTest::test_revert_fetch_fee_non_receiver(uint88)
+- test/LiquidRon.operator.t.sol:LiquidRonTest::test_harvest(uint88)
+- test/LiquidRon.operator.t.sol:LiquidRonTest::test_harvest_duration(uint88)
+base_commit: ddc09c9ae7e89eb1eb781ccf2f26210cc7d32ff8
+
+vulnerabilities:
+  - id: "H-01"
+    title: "The calculation of totalAssets() could be wrong if operatorFeeAmount > 0, this can cause potential loss for the new depositors"
+    test: "test_withdraw_new_user"
+    test_path_mapping:
+      "test/LiquidRon.t.sol": "test/LiquidRon.t.sol"
+    test_passes_if_vulnerable: false
+    patch_path_mapping:
+      "patch/LiquidRon.sol": "src/LiquidRon.sol"
+    award: 0.03

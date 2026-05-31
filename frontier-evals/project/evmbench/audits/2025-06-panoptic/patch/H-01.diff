@@ -1,0 +1,17 @@
+diff --git a/src/accountants/PanopticVaultAccountant.sol b/src/accountants/PanopticVaultAccountant.sol
+index e42bcf4..7cb0408 100644
+--- a/src/accountants/PanopticVaultAccountant.sol
++++ b/src/accountants/PanopticVaultAccountant.sol
+@@ -132,8 +133,8 @@ contract PanopticVaultAccountant is Ownable {
+                     int256(uint256(shortPremium.rightSlot())) -
+                     int256(uint256(longPremium.rightSlot()));
+                 poolExposure1 =
+-                    int256(uint256(longPremium.leftSlot())) -
+-                    int256(uint256(shortPremium.leftSlot()));
++                    int256(uint256(shortPremium.leftSlot())) -
++                    int256(uint256(longPremium.leftSlot()));
+             }
+ 
+             uint256 numLegs;
+     }
+ }

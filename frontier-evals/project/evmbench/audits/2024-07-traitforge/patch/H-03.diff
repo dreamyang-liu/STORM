@@ -1,0 +1,68 @@
+diff --git a/contracts/EntityForging/EntityForging.sol b/contracts/EntityForging/EntityForging.sol
+index c9ce23b..3bd59ba 100644
+--- a/contracts/EntityForging/EntityForging.sol
++++ b/contracts/EntityForging/EntityForging.sol
+@@ -10,7 +10,8 @@ import '../TraitForgeNft/ITraitForgeNft.sol';
+ contract EntityForging is IEntityForging, ReentrancyGuard, Ownable, Pausable {
+   ITraitForgeNft public nftContract;
+   address payable public nukeFundAddress;
+-  uint256 public taxCut = 10;
++  uint256 private constant BPS = 10_000;
++  uint256 public taxCut = 1000;
+   uint256 public oneYearInDays = 365 days;
+   uint256 public listingCount = 0;
+   uint256 public minimumListFee = 0.01 ether;
+@@ -34,6 +35,7 @@ contract EntityForging is IEntityForging, ReentrancyGuard, Ownable, Pausable {
+   }
+ 
+   function setTaxCut(uint256 _taxCut) external onlyOwner {
++    require(_taxCut <= BPS, 'Tax cut cannot exceed 100%');
+     taxCut = _taxCut;
+   }
+ 
+@@ -143,7 +145,7 @@ contract EntityForging is IEntityForging, ReentrancyGuard, Ownable, Pausable {
+       'forgePotential insufficient'
+     );
+ 
+-    uint256 devFee = forgingFee / taxCut;
++    uint256 devFee = (forgingFee * taxCut) / BPS;
+     uint256 forgerShare = forgingFee - devFee;
+     address payable forgerOwner = payable(nftContract.ownerOf(forgerTokenId));
+ 
+diff --git a/contracts/NukeFund/NukeFund.sol b/contracts/NukeFund/NukeFund.sol
+index 953d7cf..d653994 100644
+--- a/contracts/NukeFund/NukeFund.sol
++++ b/contracts/NukeFund/NukeFund.sol
+@@ -10,13 +10,14 @@ import '../Airdrop/IAirdrop.sol';
+ 
+ contract NukeFund is INukeFund, ReentrancyGuard, Ownable, Pausable {
+   uint256 public constant MAX_DENOMINATOR = 100000;
++  uint256 private constant BPS = 10_000;
+ 
+   uint256 private fund;
+   ITraitForgeNft public nftContract;
+   IAirdrop public airdropContract;
+   address payable public devAddress;
+   address payable public daoAddress;
+-  uint256 public taxCut = 10;
++  uint256 public taxCut = 1000;
+   uint256 public defaultNukeFactorIncrease = 250;
+   uint256 public maxAllowedClaimDivisor = 2;
+   uint256 public nukeFactorMaxParam = MAX_DENOMINATOR / 2;
+@@ -38,7 +39,7 @@ contract NukeFund is INukeFund, ReentrancyGuard, Ownable, Pausable {
+ 
+   // Fallback function to receive ETH and update fund balance
+   receive() external payable {
+-    uint256 devShare = msg.value / taxCut; // Calculate developer's share (10%)
++    uint256 devShare = (msg.value * taxCut) / BPS; // Calculate developer's share (10%)
+     uint256 remainingFund = msg.value - devShare; // Calculate remaining funds to add to the fund
+ 
+     fund += remainingFund; // Update the fund balance
+@@ -61,6 +62,7 @@ contract NukeFund is INukeFund, ReentrancyGuard, Ownable, Pausable {
+   }
+ 
+   function setTaxCut(uint256 _taxCut) external onlyOwner {
++    require(_taxCut <= BPS, 'Tax cut cannot exceed 100%');
+     taxCut = _taxCut;
+   }
+

@@ -1,0 +1,19 @@
+diff --git a/contracts/Security.sol b/contracts/Security.sol
+index b1dfee5..fe13361 100644
+--- a/contracts/Security.sol
++++ b/contracts/Security.sol
+@@ -6,12 +6,12 @@ contract Security {
+     mapping(address => bool) public managers;
+ 
+     modifier onlyOwner() {
+-        msg.sender == owner;
++        require(msg.sender == owner, "Caller is not the owner");
+         _;
+     }
+ 
+     modifier onlyManager() {
+-        managers[msg.sender] == true;
++        require(managers[msg.sender], "Caller is not a manager");
+         _;
+     }
+ 

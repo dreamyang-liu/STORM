@@ -1,0 +1,50 @@
+diff --git a/hardhat/smart-contracts/NextGenCore.sol b/hardhat/smart-contracts/NextGenCore.sol
+index 6d294ed..e099763 100644
+--- a/hardhat/smart-contracts/NextGenCore.sol
++++ b/hardhat/smart-contracts/NextGenCore.sol
+@@ -190,12 +190,12 @@ contract NextGenCore is ERC721Enumerable, Ownable, ERC2981 {
+         require(msg.sender == minterContract, "Caller is not the Minter Contract");
+         collectionAdditionalData[_collectionID].collectionCirculationSupply = collectionAdditionalData[_collectionID].collectionCirculationSupply + 1;
+         if (collectionAdditionalData[_collectionID].collectionTotalSupply >= collectionAdditionalData[_collectionID].collectionCirculationSupply) {
+-            _mintProcessing(mintIndex, _mintTo, _tokenData, _collectionID, _saltfun_o);
+             if (phase == 1) {
+                 tokensMintedAllowlistAddress[_collectionID][_mintingAddress] = tokensMintedAllowlistAddress[_collectionID][_mintingAddress] + 1;
+             } else {
+                 tokensMintedPerAddress[_collectionID][_mintingAddress] = tokensMintedPerAddress[_collectionID][_mintingAddress] + 1;
+             }
++            _mintProcessing(mintIndex, _mintTo, _tokenData, _collectionID, _saltfun_o);
+         }
+     }
+ 
+@@ -468,4 +468,4 @@ contract NextGenCore is ERC721Enumerable, Ownable, ERC2981 {
+         return (tokenImageAndAttributes[_tokenId][0],tokenImageAndAttributes[_tokenId][1]);
+     }
+ 
+-}
+\ No newline at end of file
++}
+diff --git a/smart-contracts/NextGenCore.sol b/smart-contracts/NextGenCore.sol
+index 6d294ed..e099763 100644
+--- a/smart-contracts/NextGenCore.sol
++++ b/smart-contracts/NextGenCore.sol
+@@ -190,12 +190,12 @@ contract NextGenCore is ERC721Enumerable, Ownable, ERC2981 {
+         require(msg.sender == minterContract, "Caller is not the Minter Contract");
+         collectionAdditionalData[_collectionID].collectionCirculationSupply = collectionAdditionalData[_collectionID].collectionCirculationSupply + 1;
+         if (collectionAdditionalData[_collectionID].collectionTotalSupply >= collectionAdditionalData[_collectionID].collectionCirculationSupply) {
+-            _mintProcessing(mintIndex, _mintTo, _tokenData, _collectionID, _saltfun_o);
+             if (phase == 1) {
+                 tokensMintedAllowlistAddress[_collectionID][_mintingAddress] = tokensMintedAllowlistAddress[_collectionID][_mintingAddress] + 1;
+             } else {
+                 tokensMintedPerAddress[_collectionID][_mintingAddress] = tokensMintedPerAddress[_collectionID][_mintingAddress] + 1;
+             }
++            _mintProcessing(mintIndex, _mintTo, _tokenData, _collectionID, _saltfun_o);
+         }
+     }
+ 
+@@ -468,4 +468,4 @@ contract NextGenCore is ERC721Enumerable, Ownable, ERC2981 {
+         return (tokenImageAndAttributes[_tokenId][0],tokenImageAndAttributes[_tokenId][1]);
+     }
+ 
+-}
+\ No newline at end of file
++}

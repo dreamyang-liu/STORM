@@ -1,0 +1,29 @@
+[package]
+name = "veto-config"
+version = "0.1.0"
+description = "Configuration utilities for the Veto proxy"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+exclude.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+# HTTP
+http = { workspace = true }
+
+# Serialization
+serde = { version = "1.0.228", default-features = false, features = ["derive"] }
+toml = { version = "0.9.8", default-features = false, features = ["parse", "serde", "std"] }
+
+# Errors
+thiserror = { workspace = true }
+
+[dev-dependencies]
+# Testing
+rstest = { version = "0.26.1", default-features = false }

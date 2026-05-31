@@ -1,0 +1,13 @@
+diff --git a/contracts/FeeSplitter.sol b/contracts/FeeSplitter.sol
+index bb24f02..5cd1ed0 100644
+--- a/contracts/FeeSplitter.sol
++++ b/contracts/FeeSplitter.sol
+@@ -32,7 +32,7 @@ contract FeeSplitter is Security {
+ 
+     constructor() Security() {}
+ 
+-    function setCurves(Curves curves_) public {
++    function setCurves(Curves curves_) public onlyOwner {
+         curves = curves_;
+     }
+ 

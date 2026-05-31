@@ -1,0 +1,47 @@
+diff --git a/vault/src/Vault.sol b/vault/src/Vault.sol
+index e92ecaf..04d8758 100644
+--- a/vault/src/Vault.sol
++++ b/vault/src/Vault.sol
+@@ -5,6 +5,7 @@ import { ERC4626, ERC20, IERC20, IERC4626 } from "openzeppelin/token/ERC20/exten
+ import { ERC20Permit, IERC20Permit } from "openzeppelin/token/ERC20/extensions/draft-ERC20Permit.sol";
+ import { SafeERC20 } from "openzeppelin/token/ERC20/utils/SafeERC20.sol";
+ import { Math } from "openzeppelin/utils/math/Math.sol";
++import { SafeCast } from "openzeppelin/utils/math/SafeCast.sol";
+ import { Ownable } from "owner-manager-contracts/Ownable.sol";
+ 
+ import { LiquidationPair } from "v5-liquidator/LiquidationPair.sol";
+@@ -110,6 +111,7 @@ error YieldFeePercentageGTPrecision(uint256 yieldFeePercentage, uint256 maxYield
+ contract Vault is ERC4626, ERC20Permit, ILiquidationSource, Ownable {
+   using Math for uint256;
+   using SafeERC20 for IERC20;
++  using SafeCast for uint256;
+ 
+   /* ============ Events ============ */
+ 
+@@ -1120,7 +1125,7 @@ contract Vault is ERC4626, ERC20Permit, ILiquidationSource, Ownable {
+    * @dev Updates the exchange rate.
+    */
+   function _mint(address _receiver, uint256 _shares) internal virtual override {
+-    _twabController.mint(_receiver, uint96(_shares));
++    _twabController.mint(_receiver, _shares.toUint96());
+     _updateExchangeRate();
+ 
+     emit Transfer(address(0), _receiver, _shares);
+@@ -1136,7 +1141,7 @@ contract Vault is ERC4626, ERC20Permit, ILiquidationSource, Ownable {
+    * @dev Updates the exchange rate.
+    */
+   function _burn(address _owner, uint256 _shares) internal virtual override {
+-    _twabController.burn(_owner, uint96(_shares));
++    _twabController.burn(_owner, _shares.toUint96());
+     _updateExchangeRate();
+ 
+     emit Transfer(_owner, address(0), _shares);
+@@ -1152,7 +1157,7 @@ contract Vault is ERC4626, ERC20Permit, ILiquidationSource, Ownable {
+    * @dev `_from` must have a balance of at least `_shares`.
+    */
+   function _transfer(address _from, address _to, uint256 _shares) internal virtual override {
+-    _twabController.transfer(_from, _to, uint96(_shares));
++    _twabController.transfer(_from, _to, _shares.toUint96());
+ 
+     emit Transfer(_from, _to, _shares);
+   }

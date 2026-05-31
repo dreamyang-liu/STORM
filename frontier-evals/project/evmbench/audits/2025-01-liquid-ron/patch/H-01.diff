@@ -1,0 +1,13 @@
+diff --git a/src/LiquidRon.sol b/src/LiquidRon.sol
+index ed26974..f9c6f79 100644
+--- a/src/LiquidRon.sol
++++ b/src/LiquidRon.sol
+@@ -291,7 +291,7 @@ contract LiquidRon is ERC4626, RonHelper, Pausable, ValidatorTracker {
+ 
+     /// @dev Gets the total amount of assets the vault controls
+     function totalAssets() public view override returns (uint256) {
+-        return super.totalAssets() + getTotalStaked() + getTotalRewards();
++        return super.totalAssets() + getTotalStaked() + getTotalRewards() - operatorFeeAmount;
+     }
+ 
+     //////////////////////

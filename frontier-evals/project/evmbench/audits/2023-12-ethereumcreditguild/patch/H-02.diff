@@ -1,0 +1,26 @@
+diff --git a/src/tokens/ERC20RebaseDistributor.sol b/src/tokens/ERC20RebaseDistributor.sol
+index 07ba797..1fde254 100644
+--- a/src/tokens/ERC20RebaseDistributor.sol
++++ b/src/tokens/ERC20RebaseDistributor.sol
+@@ -554,6 +554,10 @@ abstract contract ERC20RebaseDistributor is ERC20 {
+         address to,
+         uint256 amount
+     ) public virtual override returns (bool) {
++        require(
++            to != msg.sender,
++            "ERC20RebaseDistributor: self transfer"
++        );
+         // if `from` is rebasing, materialize the tokens from rebase to ensure
+         // proper behavior in `ERC20.transfer()`.
+         RebasingState memory rebasingStateFrom = rebasingState[msg.sender];
+@@ -648,6 +652,10 @@ abstract contract ERC20RebaseDistributor is ERC20 {
+         address to,
+         uint256 amount
+     ) public virtual override returns (bool) {
++        require(
++            from != to,
++            "ERC20RebaseDistributor: self transfer"
++        );
+         // if `from` is rebasing, materialize the tokens from rebase to ensure
+         // proper behavior in `ERC20.transfer()`.
+         RebasingState memory rebasingStateFrom = rebasingState[from];

@@ -1,0 +1,13 @@
+diff --git a/contracts/contribution/ServiceNft.sol b/contracts/contribution/ServiceNft.sol
+index 3ea7e8c..4f6cf18 100644
+--- a/contracts/contribution/ServiceNft.sol
++++ b/contracts/contribution/ServiceNft.sol
+@@ -87,7 +87,7 @@ contract ServiceNft is
+         return proposalId;
+     }
+ 
+-    function updateImpact(uint256 virtualId, uint256 proposalId) public {
++    function updateImpact(uint256 virtualId, uint256 proposalId) internal {
+         // Calculate impact
+         // Get current service maturity
+         uint256 prevServiceId = _coreServices[virtualId][_cores[proposalId]];

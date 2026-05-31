@@ -1,0 +1,21 @@
+diff --git a/src/libraries/logic/IsolateLogic.sol b/src/libraries/logic/IsolateLogic.sol
+index be67080..6e08a19 100644
+--- a/src/libraries/logic/IsolateLogic.sol
++++ b/src/libraries/logic/IsolateLogic.sol
+@@ -422,6 +422,7 @@ library IsolateLogic {
+ 
+       vars.auctionEndTimestamp = loanData.bidStartTimestamp + nftAssetData.auctionDuration;
+       require(block.timestamp > vars.auctionEndTimestamp, Errors.ISOLATE_BID_AUCTION_DURATION_NOT_END);
++      require(params.msgSender == loanData.lastBidder, " invalid msgSender");
+ 
+       vars.normalizedIndex = InterestLogic.getNormalizedBorrowDebt(debtAssetData, debtGroupData);
+       vars.borrowAmount = loanData.scaledAmount.rayMul(vars.normalizedIndex);
+@@ -461,7 +462,7 @@ library IsolateLogic {
+     InterestLogic.updateInterestRates(poolData, debtAssetData, (vars.totalBorrowAmount + vars.totalExtraAmount), 0);
+ 
+     // bid already in pool and now repay the borrow but need to increase liquidity
+-    VaultLogic.erc20TransferOutBidAmountToLiqudity(debtAssetData, vars.totalBorrowAmount);
++    VaultLogic.erc20TransferOutBidAmountToLiqudity(debtAssetData, vars.totalBorrowAmount, vars.totalBidAmount);
+ 
+     if (vars.totalExtraAmount > 0) {
+       // transfer underlying asset from liquidator to pool

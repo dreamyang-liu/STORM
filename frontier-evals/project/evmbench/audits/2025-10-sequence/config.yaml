@@ -1,0 +1,10 @@
+id: 2025-10-sequence
+
+vulnerabilities:
+  - id: "H-01"
+    title: "Chained signature with checkpoint usage disabled can bypass all checkpointer validation"
+    award: 20366.77
+  
+  - id: "H-02"
+    title: "Partial signature replay/frontrunning attack on session calls"
+    award: 20366.77

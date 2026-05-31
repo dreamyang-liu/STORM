@@ -1,0 +1,57 @@
+diff --git a/contracts/connectors/BalancerFlashLoan.sol b/contracts/connectors/BalancerFlashLoan.sol
+index 5e48767..74632a1 100644
+--- a/contracts/connectors/BalancerFlashLoan.sol
++++ b/contracts/connectors/BalancerFlashLoan.sol
+@@ -15,6 +15,7 @@ contract BalancerFlashLoan is IFlashLoanRecipient, ReentrancyGuard {
+     IBalancerVault internal vault;
+     PositionRegistry public registry;
+     address caller;
++    uint256 public activeVaultId;
+ 
+     error Unauthorized(address sender);
+ 
+@@ -70,6 +71,7 @@ contract BalancerFlashLoan is IFlashLoanRecipient, ReentrancyGuard {
+         if (!(caller == keeperContract)) {
+             revert Unauthorized(caller);
+         }
++        activeVaultId = vaultId;
+         if (registry.isAnActiveConnector(vaultId, receiver)) {
+             for (uint256 i = 0; i < tokens.length; i++) {
+                 // send the tokens to the receiver
+@@ -86,6 +88,7 @@ contract BalancerFlashLoan is IFlashLoanRecipient, ReentrancyGuard {
+                 BaseConnector(receiver).sendTokensToTrustedAddress(address(tokens[i]), amounts[i], address(this), "");
+             }
+         }
++        activeVaultId = 0;
+         for (uint256 i = 0; i < tokens.length; i++) {
+             // send the tokens back to the vault
+             tokens[i].safeTransfer(msg.sender, amounts[i]);
+diff --git a/contracts/helpers/BaseConnector.sol b/contracts/helpers/BaseConnector.sol
+index 9c33ddb..65f9b7d 100644
+--- a/contracts/helpers/BaseConnector.sol
++++ b/contracts/helpers/BaseConnector.sol
+@@ -12,6 +12,10 @@ import "../governance/Watchers.sol";
+ import "@openzeppelin/contracts-5.0/token/ERC721/IERC721Receiver.sol";
+ import "@openzeppelin/contracts-5.0/utils/ReentrancyGuard.sol";
+ 
++interface IFlashLoanAuth {
++    function activeVaultId() external view returns (uint256);
++}
++
+ struct BaseConnectorCP {
+     PositionRegistry registry;
+     uint256 vaultId;
+@@ -95,7 +99,12 @@ contract BaseConnector is NoyaGovernanceBase, IConnector, ReentrancyGuard {
+ 
+             IERC20(token).safeTransfer(address(accountingManager), newAmount);
+             amount = newAmount;
+-        } else if (registry.isAnActiveConnector(vaultId, msg.sender) || msg.sender == registry.flashLoan()) {
++        } else if (registry.isAnActiveConnector(vaultId, msg.sender)) {
++            IERC20(token).safeTransfer(address(msg.sender), amount);
++        } else if (msg.sender == registry.flashLoan()) {
++            if (IFlashLoanAuth(msg.sender).activeVaultId() != vaultId) {
++                revert IConnector_InvalidAddress(msg.sender);
++            }
+             IERC20(token).safeTransfer(address(msg.sender), amount);
+         } else {
+             uint256 routeId = abi.decode(data, (uint256));

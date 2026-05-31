@@ -1,0 +1,10 @@
+id: 2024-06-thorchain
+
+vulnerabilities:
+  - id: "H-01"
+    title: "A malicious user can steal money out of the vault and other users"
+    award: 3033.62
+
+  - id: "H-02"
+    title: "ThorChain will be informed wrongly about the unsuccessful ETH transfers due to the incorrect events emissions"
+    award: 458.56

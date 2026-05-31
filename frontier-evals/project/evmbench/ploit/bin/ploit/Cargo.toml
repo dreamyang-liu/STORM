@@ -1,0 +1,49 @@
+[package]
+name = "ploit"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+keywords.workspace = true
+categories.workspace = true
+exclude.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+# Workspace crates
+ploit-core = { workspace = true, features = ["std"] }
+ploit-exec = { workspace = true, features = ["std"] }
+ploit-utils = { workspace = true, features = ["std"] }
+ploit-config = { workspace = true, features = ["std"] }
+ploit-grader = { workspace = true, features = ["std"] }
+
+# CLI
+clap = { workspace = true, features = ["derive", "color", "env", "suggestions", "wrap_help", "unicode", "error-context", "usage", "help", "std"] }
+
+# Async runtime
+tokio = { workspace = true, features = ["full"] }
+
+# Error handling
+anyhow = { workspace = true, features = ["std"] }
+
+# Logging
+tracing = { workspace = true, features = ["std"] }
+
+# Serialization
+toml = { workspace = true, features = ["parse", "display"] }
+
+# Ethereum & Alloy
+alloy-provider = { workspace = true, features = ["reqwest"] }
+alloy-network.workspace = true
+alloy-primitives = { workspace = true, features = ["std"] }
+alloy-signer-local.workspace = true
+alloy-node-bindings.workspace = true
+
+# Encoding
+hex = { workspace = true, features = ["alloc"] }
+
+[dev-dependencies]
+rstest.workspace = true
+tempfile.workspace = true

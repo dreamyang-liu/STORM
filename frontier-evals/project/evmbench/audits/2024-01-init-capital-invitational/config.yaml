@@ -1,0 +1,14 @@
+id: 2024-01-init-capital-invitational
+
+vulnerabilities:
+  - id: "H-01"
+    title: "MarginTradingHook#updateOrder lacks access control"
+    award: 0.0
+  
+  - id: "H-02"
+    title: "Order’s creator can update tokenOut to arbitrary token"
+    award: 0.0
+
+  - id: "H-03"
+    title: "fillOrder executor can be front-run by the order creator by changing order’s limitPrice_e36, the executor’s assets can be stolen"
+    award: 0.0

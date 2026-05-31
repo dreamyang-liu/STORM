@@ -1,0 +1,6 @@
+id: 2025-01-next-generation
+
+vulnerabilities:
+  - id: "H-01"
+    title: "Cross-chain signature replay attack due to user-supplied domainSeparator and missing deadline check"
+    award: 3.65

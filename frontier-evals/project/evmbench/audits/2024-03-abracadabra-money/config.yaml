@@ -1,0 +1,19 @@
+id: 2024-03-abracadabra-money
+framework: foundry
+
+vulnerabilities:
+  - id: "H-01"
+    title: "Anyone making use of the MagicLP’s TWAP to determine token prices will be exploitable."
+    award: 725.1
+
+  - id: "H-02"
+    title: "Attacker can amplify a rounding error in MagicLP to break the I invariant and cause malicious pricing"
+    award: 6896.26
+
+  - id: "H-03"
+    title: "Users who deposited MIM and USDB tokens into BlastOnboarding may incur losses when the pool is created via bootstrap"
+    award: 6896.26
+
+  - id: "H-04"
+    title: "Oracle price can be manipulated"
+    award: 2446.85

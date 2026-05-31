@@ -1,0 +1,13 @@
+diff --git a/src/functions/Stable2.sol b/src/functions/Stable2.sol
+index ca25edc..bd5fed7 100644
+--- a/src/functions/Stable2.sol
++++ b/src/functions/Stable2.sol
+@@ -314,7 +314,7 @@ contract Stable2 is ProportionalLPToken2, IBeanstalkWellFunction {
+         if (decimal0 == 0) {
+             decimal0 = 18;
+         }
+-        if (decimal0 == 0) {
++        if (decimal1 == 0) {
+             decimal1 = 18;
+         }
+         if (decimal0 > 18 || decimal1 > 18) revert InvalidTokenDecimals();

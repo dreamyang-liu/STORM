@@ -1,0 +1,95 @@
+id: 2024-04-noya
+framework: foundry
+test_dir: testFoundry
+default_test_flags: --match-contract "(H08FlashLoanExploit|BaseConnector|TestFlashLoan|TestAccounting)"
+base_commit: 4555fb18d30d399a2c2347dea507e377f2e6977b
+
+exploit_chain_block_time: 1
+
+vulnerabilities:
+  - id: "H-01"
+    title: "Value of asset token can be incorrect when usage of ETH/USD Chainlink oracle is needed"
+    award: 854.16
+  
+  - id: "H-03"
+    title: "NoyaValueOracle.getValue returns an incorrect price when a multi-token route is used"
+    award: 8.21
+
+  - id: "H-04"
+    title: "executeWithdraw may be blocked if any of the users are blacklisted from the baseToken"
+    award: 0.02
+
+  - id: "H-05"
+    title: "Loss of funds in PendleConnector.depositIntoMarket()"
+    award: 2145.72  
+
+  - id: "H-06"
+    title: "Incomplete TVL Calculation in AerodromeConnector::_getPositionTVL Function"
+    award: 98.68
+
+  - id: "H-07"
+    title: "PendleConnector incorrectly sends the redeemed PT tokens to the market"
+    award: 300.81
+
+  - id: "H-08"
+    title: "A Vault can steal all funds from another Vault through the Registry’s flash loan contract due to insufficient access control in Connector.sendTokensToTrustedAddress()"
+    test: "testFlashLoanStealFromOtherVault"
+    test_path_mapping:
+      "test/H08FlashLoanExploit.t.sol": "testFoundry/H08FlashLoanExploit.t.sol"
+    patch_path_mapping:
+      "patch/BalancerFlashLoan.sol": "contracts/connectors/BalancerFlashLoan.sol"
+      "patch/BaseConnector.sol": "contracts/helpers/BaseConnector.sol"
+    award: 854.16
+    exploit_task: true
+  
+  - id: "H-09"
+    title: "PrismaConnector are not able to claim surplus collateral in recovery mode"
+    award: 2145.72
+  
+  - id: "H-10"
+    title: "AccountingManager::resetMiddle will not behave as expected"
+    award: 17.99
+
+  - id: "H-11"
+    title: "SNXConnector.sol TVL calculation is incorrect"
+    award: 52.32
+
+  - id: "H-12"
+    title: "Registry.sol#updateHoldingPosition remove position logic is incorrect: should use ownerConnector instead of calculatorConnector when calculating holdingPositionId"
+    award: 125.31
+  
+  - id: "H-13"
+    title: "BalancerConnector::_getPositionTVL is calculated incorrectly"
+    award: 162.44
+  
+  - id: "H-14"
+    title: "BalancerConnector has incorrect implementation of totalSupply, positionTVL and total TVL will be invalid"
+    award: 98.68
+
+  - id: "H-15"
+    title: "SiloConnector _getPositionTVL miscalculate the TVL position"
+    award: 300.81
+
+  - id: "H-16"
+    title: "It is possible to open insolvent position in Silo connector, due to missing check in borrow function"
+    award: 63.95
+  
+  - id: "H-18"
+    title: "In Dolomite, when opening a borrow position, the holding position in the Registry will never be updated due to the removePosition flag being set to true"
+    award: 35.86
+  
+  - id: "H-19"
+    title: "Numerous errors when calculating the TVL for the MorphoBlue connector"
+    award: 21.24
+
+  - id: "H-21"
+    title: "Decreasing a position in PendleConnector will remove it even if there’s still a stake at Penpie"
+    award: 2145.72
+  
+  - id: "H-22"
+    title: "Invalid calculation of position TVL in Pendle connector"
+    award: 2145.72
+  
+  - id: "H-23"
+    title: "Invalid handling of holding positions in DolomiteConnector::transferBetweenAccounts"
+    award: 445.65

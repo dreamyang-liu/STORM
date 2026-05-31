@@ -1,0 +1,42 @@
+id: 2025-04-forte
+framework: foundry
+default_test_flags: "--ffi"
+base_commit: ce7f56c96c385d87a4be9737acea8fe9b425576a
+
+vulnerabilities:
+  - id: "H-01"
+    title: "Early 72-digit adjustment in sqrt will lead to incorrect result exponent calculation"
+    test: "testH01POC"
+    test_path_mapping:
+      "test/IncorrectExp.t.sol": "test/IncorrectExp.t.sol"
+    patch_path_mapping:
+      "patch/Float128.sol": "src/Float128.sol"
+    award: 458.74
+
+  - id: "H-02"
+    title: "Square root function silently accepts invalid non-positive inputs"
+    test: "testSqrtSilentRevert"
+    test_path_mapping:
+      "test/SqrtSilentRevert.t.sol": "test/SqrtSilentRevert.t.sol"
+    patch_path_mapping:
+      "patch/Float128.sol": "src/Float128.sol"
+    award: 45.17
+
+  - id: "H-03"
+    title: "Natural logarithm function silently accepts invalid non-positive inputs"
+    test: "testLnWithNonPositiveInput"
+    test_passes_if_vulnerable: false
+    test_path_mapping:
+      "test/LnAcceptsNonPositive.t.sol": "test/LnAcceptsNonPositive.t.sol"
+    patch_path_mapping:
+      "patch/Ln.sol": "src/Ln.sol"
+    award: 4.03
+  
+  - id: "H-04"
+    title: "Unwrapping while equating inside the eq function fails to account for the set L_MATISSA_FLAG"
+    award: 345.88
+    
+  - id: "H-05"
+    title: "Precision loss in toPackedFloat function when mantissa is in range (MAX_M_DIGIT_NUMBER, MIN_L_DIGIT_NUMBER)"
+    award: 1698.76
+    

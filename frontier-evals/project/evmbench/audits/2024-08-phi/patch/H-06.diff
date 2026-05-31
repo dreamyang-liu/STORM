@@ -1,0 +1,12 @@
+diff --git a/src/Cred.sol b/src/Cred.sol
+index 606b13f..ec2e166 100644
+--- a/src/Cred.sol
++++ b/src/Cred.sol
+@@ -239,6 +239,7 @@ contract Cred is Initializable, UUPSUpgradeable, Ownable2StepUpgradeable, Pausab
+         public
+         payable
+         whenNotPaused
++        nonReentrant
+     {
+         if (_recoverSigner(keccak256(signedData_), signature_) != phiSignerAddress) revert AddressNotSigned();
+         (

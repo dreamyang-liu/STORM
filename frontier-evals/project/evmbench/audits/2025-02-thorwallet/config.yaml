@@ -1,0 +1,7 @@
+id: 2025-02-thorwallet
+
+vulnerabilities:
+  - id: "H-01"
+    title: "MergeTgt has no handling if TGTTOEXCHANGE is exceeded during the exchange period"
+    award: 0.35
+  

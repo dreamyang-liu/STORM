@@ -1,0 +1,65 @@
+id: 2024-08-phi
+framework: foundry
+post_patch_fail_threshold: 9
+tests_allowed_to_fail:
+- test/CuratorRewardsDistributor.t.sol:CuratorRewardsDistributorTest::testDistributeNoShares()
+- test/Claimable.t.sol:TestClaimable::setUp()
+- test/PhiFactory.t.sol:TestPhiFactory::test_batchClaim_1155_with_ref()
+- test/PhiFactory.t.sol:TestPhiFactory::test_claimMerkle()
+- test/PhiFactory.t.sol:TestPhiFactory::test_claim_1155_with_ref()
+- test/PhiFactory.t.sol:TestPhiFactory::test_contractURI()
+- test/PhiFactory.t.sol:TestPhiFactory::test_createTokenId2()
+- test/PhiFactory.t.sol:TestPhiFactory::test_updateArtSettings()
+- test/Cred.t.sol:TestCred::testBuyAndSellOneByOneUpTo999()
+base_commit: c9cce9061fd19c2d80835c185cb43ba2fc82cecb
+
+exploit_chain_genesis_timestamp: 1700000000
+
+vulnerabilities:
+  - id: "H-01"
+    title: "Signature replay in signatureClaim results in unauthorized claiming of rewards"
+    test: "testKuprum_Claim_with_Signature_Replay"
+    test_path_mapping:
+      "test/Claimable.t.sol": "test/Claimable.t.sol"
+    patch_path_mapping:
+      "patch/PhiFactory.sol": "src/PhiFactory.sol"
+    exploit_task: true
+    award: 938.08
+
+  - id: "H-02"
+    title: "Signature replay in createArt allows to impersonate artist and steal royalties"
+    test: "testKuprum_ImpersonateArtist"
+    test_path_mapping:
+      "test/PhiFactory.t.sol": "test/PhiFactory.t.sol"
+    patch_path_mapping:
+      "patch/PhiFactory.sol": "src/PhiFactory.sol"
+    award: 21.42
+
+  - id: "H-03"
+    title: "shareBalance bloating eventually blocks curator rewards distribution"
+    test: "testBloatingBalances"
+    test_passes_if_vulnerable: false
+    test_path_mapping:
+      "test/CuratorRewardsDistributor.t.sol": "test/CuratorRewardsDistributor.t.sol"
+    test_flags: "--gas-limit 2000000000 --isolate"
+    patch_path_mapping:
+      "patch/Cred.sol": "src/Cred.sol"
+    award: 17.25
+
+  - id: "H-04"
+    title: "Forced endTime extension in updateArtSettings() allows attacker to mint more tokens"
+    award: 7943.00
+
+  - id: "H-06"
+    title: "Reentrancy Vulnerability Allows Bypass of Cooldown, Leading to Unfair Reward Extraction Through Flash Loan"
+    test: "testCredDraining"
+    test_path_mapping:
+      "test/Cred.t.sol": "test/Cred.t.sol"
+    patch_path_mapping:
+      "patch/Cred.sol": "src/Cred.sol"
+    award: 9.15
+    exploit_task: true
+
+  - id: "H-07"
+    title: "Unrestricted changes to token settings allow artists to alter critical features"
+    award: 41.86

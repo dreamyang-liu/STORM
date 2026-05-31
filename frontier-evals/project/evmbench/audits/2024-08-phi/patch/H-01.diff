@@ -1,0 +1,16 @@
+diff --git a/src/PhiFactory.sol b/src/PhiFactory.sol
+index 45fb934..0706e76 100644
+--- a/src/PhiFactory.sol
++++ b/src/PhiFactory.sol
+@@ -337,7 +337,10 @@ contract PhiFactory is Initializable, UUPSUpgradeable, Ownable2StepUpgradeable,
+             abi.decode(encodeData_, (uint256, address, address, address, uint256, uint256, bytes32));
+ 
+         if (expiresIn_ <= block.timestamp) revert SignatureExpired();
+-        if (_recoverSigner(keccak256(encodeData_), signature_) != phiSignerAddress) revert AddressNotSigned();
++
++        // Repack the signature data with the current chainId to prevent cross-chain replay attacks
++        bytes memory repackedData = abi.encode(expiresIn_, minter_, ref_, verifier_, artId_, block.chainid, data_);
++        if (_recoverSigner(keccak256(repackedData), signature_) != phiSignerAddress) revert AddressNotSigned();
+ 
+         _validateAndUpdateClaimState(artId_, minter_, mintArgs_.quantity);
+         _processClaim(artId_, minter_, ref_, verifier_, mintArgs_.quantity, data_, mintArgs_.imageURI, msg.value);

@@ -1,0 +1,34 @@
+diff --git a/src/accountants/PanopticVaultAccountant.sol b/src/accountants/PanopticVaultAccountant.sol
+index e42bcf4..7cb0408 100644
+--- a/src/accountants/PanopticVaultAccountant.sol
++++ b/src/accountants/PanopticVaultAccountant.sol
+@@ -108,6 +108,7 @@ contract PanopticVaultAccountant is Ownable {
+ 
+         // resolves stack too deep error
+         address _vault = vault;
++        int256 totalExposure;
+ 
+         for (uint256 i = 0; i < pools.length; i++) {
+             if (
+@@ -246,8 +247,7 @@ contract PanopticVaultAccountant is Ownable {
+                 poolExposure1 = PanopticMath.convert1to0(poolExposure1, conversionPrice);
+             }
+ 
+-            // debt in pools with negative exposure does not need to be paid back
+-            nav += uint256(Math.max(poolExposure0 + poolExposure1, 0));
++            totalExposure += poolExposure0 + poolExposure1;
+         }
+ 
+         // underlying cannot be native (0x000/0xeee)
+@@ -255,6 +255,10 @@ contract PanopticVaultAccountant is Ownable {
+         for (uint256 i = 0; i < underlyingTokens.length; i++) {
+             if (underlyingTokens[i] == underlyingToken) skipUnderlying = true;
+         }
+-        if (!skipUnderlying) nav += IERC20Partial(underlyingToken).balanceOf(_vault);
++        if (!skipUnderlying)
++            totalExposure += int256(IERC20Partial(underlyingToken).balanceOf(_vault));
++
++        // debt in pools with negative exposure does not need to be paid back
++        nav = uint256(Math.max(totalExposure, 0));
+     }
+ }

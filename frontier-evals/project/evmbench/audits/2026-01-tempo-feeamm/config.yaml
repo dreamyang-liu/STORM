@@ -1,0 +1,13 @@
+id: 2026-01-tempo-feeamm
+framework: foundry
+base_commit: 14539664d53abcc4099e02adc01f12739edeef24
+
+vulnerabilities:
+  - id: "H-01"
+    title: "Reentrancy in burn allows stablecoin pool drainage"
+    test: "testReentrancyBurnDrain"
+    test_path_mapping:
+      "test/ExploitH01.t.sol": "test/ExploitH01.t.sol"
+    patch_path_mapping:
+      "patch/FeeAMM.sol": "contracts/FeeAMM.sol"
+    award: 0.0

@@ -1,0 +1,13 @@
+diff --git a/src/libraries/actions/Liquidate.sol b/src/libraries/actions/Liquidate.sol
+index 59b8de1..17a6461 100644
+--- a/src/libraries/actions/Liquidate.sol
++++ b/src/libraries/actions/Liquidate.sol
+@@ -105,7 +105,7 @@ library Liquidate {
+             // cap the collateral remainder to the liquidation collateral ratio
+             //   otherwise, the split for non-underwater overdue loans could be too much
+             uint256 collateralRemainderCap =
+-                Math.mulDivDown(debtInCollateralToken, state.riskConfig.crLiquidation, PERCENT);
++                Math.mulDivDown(debtInCollateralToken, state.riskConfig.crLiquidation - PERCENT, PERCENT);
+ 
+             collateralRemainder = Math.min(collateralRemainder, collateralRemainderCap);
+ 

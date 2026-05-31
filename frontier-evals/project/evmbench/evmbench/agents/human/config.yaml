@@ -1,0 +1,4 @@
+human:
+  # unused placeholders that are required
+  start: human/start.sh
+  instruction_file_name: HUMAN.md

@@ -1,0 +1,38 @@
+[package]
+name = "ploit-utils"
+version = "0.1.0"
+description = "Common utilities for CLI styling, signal handlers, and debugging support"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+exclude.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+# Workspace
+ploit-config.workspace = true
+
+# External
+libc.workspace = true
+tracing.workspace = true
+anyhow = { workspace = true, features = ["std"] }
+derive_more = { workspace = true, features = ["from", "display", "error"] }
+tracing-subscriber = { workspace = true, features = ["fmt", "env-filter", "ansi", "std"] }
+clap = { workspace = true, features = ["derive", "color", "env", "suggestions", "wrap_help", "unicode", "error-context", "usage", "help", "std"] }
+
+[features]
+default = [ "std" ]
+std = [
+	"anyhow/std",
+	"clap/std",
+	"derive_more/std",
+	"libc/std",
+	"ploit-config/std",
+	"tracing-subscriber/std",
+	"tracing/std",
+]

@@ -1,0 +1,8 @@
+[profile.default]
+src = "contracts"
+out = "out"
+libs = ["lib"]
+solc_version = "0.8.20"
+
+[rpc_endpoints]
+local = "http://127.0.0.1:8545"

@@ -1,0 +1,16 @@
+diff --git a/src/Cred.sol b/src/Cred.sol
+index 606b13f..14630c1 100644
+--- a/src/Cred.sol
++++ b/src/Cred.sol
+@@ -676,8 +676,10 @@ contract Cred is Initializable, UUPSUpgradeable, Ownable2StepUpgradeable, Pausab
+             if ((currentNum - amount_) == 0) {
+                 _removeCredIdPerAddress(credId_, sender_);
+                 _credIdExistsPerAddress[sender_][credId_] = false;
++                shareBalance[credId_].remove(sender_);
++            } else {
++                shareBalance[credId_].set(sender_, currentNum - amount_);
+             }
+-            shareBalance[credId_].set(sender_, currentNum - amount_);
+         }
+     }
+ 

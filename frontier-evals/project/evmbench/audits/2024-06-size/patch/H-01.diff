@@ -1,0 +1,21 @@
+diff --git a/src/libraries/AccountingLibrary.sol b/src/libraries/AccountingLibrary.sol
+index aee76de..98220dc 100644
+--- a/src/libraries/AccountingLibrary.sol
++++ b/src/libraries/AccountingLibrary.sol
+@@ -246,14 +246,14 @@ library AccountingLibrary {
+             // no credit fractionalization
+ 
+             creditAmountIn = maxCredit;
+-            fees = Math.mulDivUp(cashAmountOut, swapFeePercent, PERCENT);
++            fees = Math.mulDivUp(cashAmountOut, swapFeePercent, PERCENT - swapFeePercent);
+         } else if (cashAmountOut < maxCashAmountOutFragmentation) {
+             // credit fractionalization
+ 
+             creditAmountIn = Math.mulDivUp(
+                 cashAmountOut + state.feeConfig.fragmentationFee, PERCENT + ratePerTenor, PERCENT - swapFeePercent
+             );
+-            fees = Math.mulDivUp(cashAmountOut, swapFeePercent, PERCENT) + state.feeConfig.fragmentationFee;
++            fees = Math.mulDivUp(cashAmountOut + state.feeConfig.fragmentationFee, swapFeePercent, PERCENT - swapFeePercent) + state.feeConfig.fragmentationFee;
+         } else {
+             // for maxCashAmountOutFragmentation < amountOut < maxCashAmountOut we are in an inconsistent situation
+             //   where charging the swap fee would require to sell a credit that exceeds the max possible credit

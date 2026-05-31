@@ -1,0 +1,22 @@
+diff --git a/src/Float128.sol b/src/Float128.sol
+index 7637d83..07bbf31 100644
+--- a/src/Float128.sol
++++ b/src/Float128.sol
+@@ -699,6 +699,7 @@ library Float128 {
+         uint aMan;
+         uint256 roundedDownResult;
+         bool aL;
++        if (packedFloat.unwrap(a) == 0) return packedFloat.wrap(0);
+         assembly {
+             if and(a, MANTISSA_SIGN_MASK) {
+                 let ptr := mload(0x40) // Get free memory pointer
+@@ -708,9 +709,6 @@ library Float128 {
+                 mstore(add(ptr, 0x44), "float128: squareroot of negative")
+                 revert(ptr, 0x64) // Revert data length is 4 bytes for selector and 3 slots of 0x20 bytes
+             }
+-            if iszero(a) {
+-                stop()
+-            }
+             aL := gt(and(a, MANTISSA_L_FLAG_MASK), 0)
+             aMan := and(a, MANTISSA_MASK)
+             aExp := shr(EXPONENT_BIT, and(a, EXPONENT_MASK))

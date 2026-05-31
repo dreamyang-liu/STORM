@@ -1,0 +1,40 @@
+diff --git a/smart-contracts/src/libraries/RentalConstants.sol b/smart-contracts/src/libraries/RentalConstants.sol
+index d05c90c..abd2d73 100644
+--- a/smart-contracts/src/libraries/RentalConstants.sol
++++ b/smart-contracts/src/libraries/RentalConstants.sol
+@@ -57,6 +57,9 @@ bytes4 constant gnosis_safe_enable_module_selector = 0x610b5925;
+ // bytes4(keccak256("disableModule(address,address)"));
+ bytes4 constant gnosis_safe_disable_module_selector = 0xe009cfde;
+ 
++// bytes4(keccak256("setFallbackHandler(address)"));
++bytes4 constant gnosis_safe_set_fallback_handler_selector = 0xf08a0323;
++
+ // Module offsets for gnosis safe
+ uint256 constant gnosis_safe_enable_module_offset = 0x24;
+ uint256 constant gnosis_safe_disable_module_offset = 0x24;
+diff --git a/smart-contracts/src/policies/Guard.sol b/smart-contracts/src/policies/Guard.sol
+index a0a565a..d4a8164 100644
+--- a/smart-contracts/src/policies/Guard.sol
++++ b/smart-contracts/src/policies/Guard.sol
+@@ -26,6 +26,7 @@ import {
+     gnosis_safe_set_guard_selector,
+     gnosis_safe_enable_module_selector,
+     gnosis_safe_disable_module_selector,
++    gnosis_safe_set_fallback_handler_selector,
+     gnosis_safe_enable_module_offset,
+     gnosis_safe_disable_module_offset
+ } from "@src/libraries/RentalConstants.sol";
+@@ -289,6 +290,13 @@ contract Guard is Policy, BaseGuard {
+                     gnosis_safe_set_guard_selector
+                 );
+             }
++
++            // Revert if the `setFallbackHandler` selector is specified.
++            if (selector == gnosis_safe_set_fallback_handler_selector) {
++                revert Errors.GuardPolicy_UnauthorizedSelector(
++                    gnosis_safe_set_fallback_handler_selector
++                );
++            }
+         }
+     }
+ 

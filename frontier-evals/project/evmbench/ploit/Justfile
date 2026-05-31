@@ -1,0 +1,109 @@
+set positional-arguments
+alias t := test
+alias l := lint
+alias f := fmt-fix
+alias c := check
+alias b := build
+alias h := hack
+alias e := examples
+alias z := zepter
+alias u := check-udeps
+
+# default recipe to display help information
+default:
+  @just --list
+
+# Ensures ci will pass
+ci: fmt-fix lint hack zepter check-udeps test
+
+# Runs the evalone binary
+evalone *args:
+  cargo run --bin evalone -- {{args}}
+
+# Test with all features. By default, excludes online tests.
+test *args="-E '!test(test_online)'":
+  cargo nextest run --workspace --all-features {{args}}
+
+# Lints with all features.
+lint: fmt-fix fmt-check lint-docs
+
+# Run nightly fmt, fixing any issues
+fmt-fix:
+  cargo +nightly fmt --all
+
+# Run nightly fmt checks
+fmt-check:
+  cargo +nightly fmt --all -- --check
+
+# Clippy checks with all features.
+check *args="--all-features":
+  cargo clippy --workspace {{args}}
+
+# Lint the Rust documentation
+lint-docs:
+  RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --document-private-items
+
+# Build with all features.
+build *args='--release --all-features':
+  cargo build --workspace {{args}}
+
+# Runs `cargo hack check` against the workspace
+hack:
+  cargo hack check --feature-powerset --no-dev-deps
+
+# Build all examples
+examples-build:
+  @echo "Building all examples..."
+  cargo build --package reentrancy-example
+  cargo build --package init-example
+
+# Run all examples
+examples:
+  @echo "Running all examples..."
+  @just example-reentrancy
+  @just example-init
+
+# Run the reentrancy example
+example-reentrancy:
+  @echo "Running reentrancy example..."
+  cd examples/reentrancy && forge install foundry-rs/forge-std --no-commit 2>/dev/null || true
+  cargo run --package reentrancy-example
+
+# Run the init example
+example-init:
+  @echo "Running init example..."
+  cd examples/init && forge install foundry-rs/forge-std --no-commit 2>/dev/null || true
+  cargo run --package init-example
+
+# Build the docker builder image locally.
+# Build context must be the evmbench repo root so the Dockerfile can COPY both `ploit/` and `veto/`.
+docker-build:
+  docker build -f Dockerfile -t ploit-builder:latest --target ploit-builder ..
+
+# Check for unused dependencies in the crate graph.
+check-udeps:
+  cargo +nightly udeps --workspace --all-features --all-targets
+
+# Run zepter to format and lint features
+zepter:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  if ! command -v zepter &> /dev/null; then
+    echo "Installing zepter..."
+    cargo install zepter -f --locked
+  fi
+  zepter --version
+  zepter format features
+  zepter
+
+# Fix zepter formatting issues
+zepter-fix:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  if ! command -v zepter &> /dev/null; then
+    echo "Installing zepter..."
+    cargo install zepter -f --locked
+  fi
+  zepter --version
+  zepter format features --fix
+  zepter

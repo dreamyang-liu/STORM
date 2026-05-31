@@ -1,0 +1,6 @@
+id: 2024-05-arbitrum-foundation
+
+vulnerabilities:
+  - id: "H-01"
+    title: "Adversary can make honest parties unable to retrieve their assertion stakes if the required amount is decreased"
+    award: 40547.47

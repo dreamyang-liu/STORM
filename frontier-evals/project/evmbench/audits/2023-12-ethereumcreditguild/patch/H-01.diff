@@ -1,0 +1,23 @@
+diff --git a/src/governance/ProfitManager.sol b/src/governance/ProfitManager.sol
+index e7b6010..c76a4eb 100644
+--- a/src/governance/ProfitManager.sol
++++ b/src/governance/ProfitManager.sol
+@@ -413,14 +413,15 @@ contract ProfitManager is CoreRef {
+         uint256 _userGaugeWeight = uint256(
+             GuildToken(guild).getUserGaugeWeight(user, gauge)
+         );
+-        if (_userGaugeWeight == 0) {
+-            return 0;
+-        }
+         uint256 _gaugeProfitIndex = gaugeProfitIndex[gauge];
+         uint256 _userGaugeProfitIndex = userGaugeProfitIndex[user][gauge];
+         if (_gaugeProfitIndex == 0) {
+             _gaugeProfitIndex = 1e18;
+         }
++        if (_userGaugeWeight == 0) {
++            userGaugeProfitIndex[user][gauge] = _gaugeProfitIndex;
++            return 0;
++        }
+         if (_userGaugeProfitIndex == 0) {
+             _userGaugeProfitIndex = 1e18;
+         }

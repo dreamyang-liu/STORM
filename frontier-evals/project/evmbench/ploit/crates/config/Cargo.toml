@@ -1,0 +1,44 @@
+[package]
+name = "ploit-config"
+version = "0.1.0"
+description = "Configuration types and utilities for ploit"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+keywords.workspace = true
+categories.workspace = true
+exclude.workspace = true
+
+[dependencies]
+alloy-signer-local = { workspace = true, optional = true }
+hex = { workspace = true, features = ["alloc"], optional = true }
+anyhow = { workspace = true, features = ["std"], optional = true }
+tracing = { workspace = true, features = ["std"], optional = true }
+serde = { workspace = true, features = ["derive", "std"], optional = true }
+alloy-primitives = { workspace = true, features = ["std", "serde"], optional = true }
+toml = { workspace = true, features = ["parse", "display", "serde"], optional = true }
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[lints]
+workspace = true
+
+[features]
+default = [ "std" ]
+std = [
+	"alloy-primitives",
+	"alloy-primitives?/std",
+	"alloy-signer-local",
+	"anyhow",
+	"anyhow?/std",
+	"hex",
+	"hex?/std",
+	"serde",
+	"serde?/std",
+	"toml",
+	"toml?/std",
+	"tracing",
+	"tracing?/std",
+]
+serde = [ "alloy-primitives?/serde", "dep:serde", "hex?/serde", "toml?/serde" ]

@@ -1,0 +1,49 @@
+diff --git a/src/PhiFactory.sol b/src/PhiFactory.sol
+index 45fb934..256e90d 100644
+--- a/src/PhiFactory.sol
++++ b/src/PhiFactory.sol
+@@ -204,8 +204,28 @@ contract PhiFactory is Initializable, UUPSUpgradeable, Ownable2StepUpgradeable,
+         whenNotPaused
+         returns (address)
+     {
+-        _validateArtCreationSignature(signedData_, signature_);
+-        (, string memory uri_, bytes memory credData) = abi.decode(signedData_, (uint256, string, bytes));
++        // Decode the signed data first
++        (uint256 expiresIn_, string memory uri_, bytes memory credData) = abi.decode(signedData_, (uint256, string, bytes));
++
++        // Create extended data that includes CreateConfig and submitter
++        bytes memory extendedData = abi.encode(
++            expiresIn_,
++            uri_,
++            credData,
++            createConfig_.artist,
++            createConfig_.receiver,
++            createConfig_.endTime,
++            createConfig_.startTime,
++            createConfig_.maxSupply,
++            createConfig_.mintFee,
++            createConfig_.soulBounded,
++            msg.sender
++        );
++
++        // Validate signature with extended data
++        if (_recoverSigner(keccak256(extendedData), signature_) != phiSignerAddress) revert AddressNotSigned();
++        if (expiresIn_ <= block.timestamp) revert SignatureExpired();
++
+         ERC1155Data memory erc1155Data = _createERC1155Data(artIdCounter, createConfig_, uri_, credData);
+         address artAddress = createERC1155Internal(artIdCounter, erc1155Data);
+         artIdCounter++;
+@@ -559,6 +579,13 @@ contract PhiFactory is Initializable, UUPSUpgradeable, Ownable2StepUpgradeable,
+ 
+         address artAddress;
+         if (credNFTContracts[credChainId][credId] == address(0)) {
++            // Calculate the deterministic address that would be created
++            bytes32 salt = keccak256(abi.encodePacked(block.chainid, newArtId, credId));
++            address expectedAddress = LibClone.predictDeterministicAddress(erc1155ArtAddress, salt, address(this));
++            // Check if a contract already exists at this address
++            if (expectedAddress.code.length > 0) {
++                revert ArtAlreadyCreated();
++            }
+             artAddress = _createNewNFTContract(currentArt, newArtId, createData_, credId, credChainId, verificationType);
+         } else {
+             artAddress = _useExistingNFTContract(currentArt, newArtId, createData_, credId, credChainId);

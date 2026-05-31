@@ -1,0 +1,6 @@
+id: 2024-03-coinbase
+
+vulnerabilities:
+  - id: "H-01"
+    title: "Remove owner calls can be replayed to remove a different owner at the same index, leading to severe issues when combined with lack of last owner guard"
+    award: 0.0

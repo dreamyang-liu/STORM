@@ -1,0 +1,30 @@
+id: 2023-10-nextgen
+framework: hardhat
+run_cmd_dir: hardhat
+test_dir: hardhat/test
+base_commit: ba73b7d488f7d9655938dc8ec07f095870de46a0
+
+vulnerabilities:
+  - id: "H-01"
+    title: "Attacker can reenter to mint all the collection supply"
+    test: "H-01 reentrancy mints full supply"
+    test_path_mapping:
+      "test/h01-reentrancy.test.js": "hardhat/test/h01-reentrancy.test.js"
+      "test/ReentrantMinter.sol": "hardhat/smart-contracts/ReentrantMinter.sol"
+    patch_path_mapping:
+      # These files are identical but the harness maps 1:1
+      "patch/NextGenCore.sol": "smart-contracts/NextGenCore.sol"
+      "patch/NextGenCore.hardhat.sol": "hardhat/smart-contracts/NextGenCore.sol"
+    award: 0.15
+    exploit_task: true
+  
+  - id: "H-02"
+    title: "Attacker can drain all ETH from AuctionDemo when block.timestamp == auctionEndTime"
+    test: "H-02 timestamp overlap drains auction funds"
+    test_path_mapping:
+      "test/h02-auction.test.js": "hardhat/test/h02-auction.test.js"
+      "test/AuctionAttacker.sol": "hardhat/smart-contracts/AuctionAttacker.sol"
+    patch_path_mapping:
+      "patch/AuctionDemo.sol": "smart-contracts/AuctionDemo.sol"
+      "patch/AuctionDemo.hardhat.sol": "hardhat/smart-contracts/AuctionDemo.sol"
+    award: 0.0

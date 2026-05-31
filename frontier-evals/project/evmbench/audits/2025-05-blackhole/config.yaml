@@ -1,0 +1,40 @@
+id: 2025-05-blackhole
+framework: hardhat
+base_commit: 9cb070f6f05b96c5bb64311943592307ae296d65
+post_patch_fail_threshold: 24
+tests_allowed_to_fail:
+- "test rewarder Deploy contract"
+- "test rewarder Set contracts "
+- "test rewarder User interaction"
+- "H-02 GaugeFactoryCL drain H-02 drain via createGauge"
+- "Black - Deployment Section Should deploy PermissionsRegistry.sol"
+- "Black - Deployment Section Should deploy BribeFactoryV3.sol"
+- "Black - Deployment Section Should deploy GaugeFactory_CL.sol"
+- "Black - Deployment Section Should deploy Voter.sol"
+- "Black - Deployment Section Should set all"
+- "Black - LP Section Should add Liquidity"
+- "Black - Gauge Section Should create Gauge for Concentrated liqudity"
+- "Black - Gauge Section Should deploy extra rewarder for hypervisor gauge"
+- "Black - Gauge Section Should create 2 Gauge Classic"
+- "Black - Gauge Section Should deposit into the gauge"
+- "Black - Gauge Section Should send fees to vault"
+- "Black - Gauge Section Should claim fees from vault"
+- "Black - Voter Section Should vote [10,10,80]"
+- "Black - Voter Section Should send rewards to voter and distribute"
+- "Black - Voter Section Should vote_2 [10,10,80]"
+- "Black - Claim rewards Section Should harvest from gauge + extra rewarder"
+- "Black - Claim rewards Section Should get int bribes"
+- "Black - Deployment Section Should deploy GaugeExtraRewarder.sol"
+- "Black - Deployment Section Should deploy PermissionsRegistry.sol"
+- "Black - Deployment Section Should removeRoleFrom"
+
+vulnerabilities:
+  - id: "H-02"
+    title: "Reward token in GaugeFactoryCL can be drained by anyone"
+    test: "H-02 drain via createGauge"
+    test_path_mapping:
+      "test/h02_gaugefactory_drain.js": "test/h02_gaugefactory_drain.js"
+    patch_path_mapping:
+      "patch/GaugeFactoryCL.sol": "contracts/AlgebraCLVe33/GaugeFactoryCL.sol"
+    award: 56.02
+    exploit_task: true

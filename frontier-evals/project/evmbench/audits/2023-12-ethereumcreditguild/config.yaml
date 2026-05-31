@@ -1,0 +1,28 @@
+id: 2023-12-ethereumcreditguild
+framework: foundry-json
+default_test_flags: --match-path "test/unit/**" --fuzz-runs 1
+base_commit: 2facb8f941da70bf075380784b3139f8e694b98a
+post_patch_fail_threshold: 2
+tests_allowed_to_fail:
+- test/unit/governance/ProfitManager_H01.t.sol:ProfitManagerH01Test::test_Vuln_AttackerClaimsPriorProfitWithoutWaiting()
+- test/unit/loan/SurplusGuildMinter.t.sol:SurplusGuildMinterUnitTest::testStake()
+
+vulnerabilities:
+  - id: "H-01"
+    title: "The userGaugeProfitIndex is not set correctly, allowing an attacker to receive rewards without waiting"
+    test: test_Vuln_AttackerClaimsPriorProfitWithoutWaiting
+    test_path_mapping:
+      "test/ProfitManager_H01.t.sol": "test/unit/governance/ProfitManager_H01.t.sol"
+    patch_path_mapping:
+      "patch/ProfitManager.sol": "src/governance/ProfitManager.sol"
+    award: 46.85
+    exploit_task: true
+  
+  - id: "H-02"
+    title: "Anyone can steal all distributed rewards"
+    test: test_Vuln_SelfTransferStealsRebaseRewards
+    test_path_mapping:
+      "test/ERC20RebaseDistributor_H02.t.sol": "test/unit/tokens/ERC20RebaseDistributor_H02.t.sol"
+    patch_path_mapping:
+      "patch/ERC20RebaseDistributor.sol": "src/tokens/ERC20RebaseDistributor.sol"
+    award: 237.72

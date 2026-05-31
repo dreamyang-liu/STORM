@@ -1,0 +1,10 @@
+id: 2024-05-munchables
+
+vulnerabilities:
+  - id: "H-01"
+    title: "Malicious User can call lockOnBehalf repeatedly extend a users unlockTime, removing their ability to withdraw previously locked tokens"
+    award: 0.01
+
+  - id: "H-02"
+    title: "Invalid validation allows users to unlock early"
+    award: 0.01

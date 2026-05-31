@@ -1,0 +1,31 @@
+diff --git a/src/libraries/logic/VaultLogic.sol b/src/libraries/logic/VaultLogic.sol
+index 5fc739c..ee3e403 100644
+--- a/src/libraries/logic/VaultLogic.sol
++++ b/src/libraries/logic/VaultLogic.sol
+@@ -493,8 +493,8 @@ library VaultLogic {
+     require(poolSizeBefore == (poolSizeAfter + amount), Errors.INVALID_TRANSFER_AMOUNT);
+   }
+ 
+-  function erc20TransferOutBidAmountToLiqudity(DataTypes.AssetData storage assetData, uint amount) internal {
+-    assetData.totalBidAmout -= amount;
++  function erc20TransferOutBidAmountToLiqudity(DataTypes.AssetData storage assetData, uint amount, uint bidAmount) internal {
++    assetData.totalBidAmout -= bidAmount;
+     assetData.availableLiquidity += amount;
+   }
+ 
+@@ -618,6 +618,7 @@ library VaultLogic {
+ 
+       tokenData.owner = address(0);
+       tokenData.supplyMode = 0;
++      tokenData.lockerAddr = address(0);
+     }
+ 
+     assetData.totalScaledIsolateSupply -= tokenIds.length;
+@@ -636,6 +637,7 @@ library VaultLogic {
+ 
+       tokenData.owner = address(0);
+       tokenData.supplyMode = 0;
++      tokenData.lockerAddr = address(0);
+     }
+ 
+     assetData.totalScaledIsolateSupply -= tokenIds.length;

@@ -1,0 +1,29 @@
+diff --git a/src/Ln.sol b/src/Ln.sol
+index 4c73bbc..0fb0eb0 100644
+--- a/src/Ln.sol
++++ b/src/Ln.sol
+@@ -16,6 +16,7 @@ library Ln {
+     // These constants are used in an inline assembly block and must direct number constants
+     uint constant MANTISSA_MASK = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
+     uint constant MANTISSA_L_FLAG_MASK = 0x2000000000000000000000000000000000000000000000000000000000000;
++    uint constant MANTISSA_SIGN_MASK = 0x1000000000000000000000000000000000000000000000000000000000000;
+     uint constant EXPONENT_MASK = 0xfffc000000000000000000000000000000000000000000000000000000000000;
+     uint constant ZERO_OFFSET = 8192;
+     uint constant EXPONENT_BIT = 242;
+@@ -61,6 +62,16 @@ library Ln {
+      * @notice passing a large-mantissa input will have better precision results.
+      */
+     function ln(packedFloat input) public pure returns (packedFloat result) {
++        // Check if input is zero
++        if (packedFloat.unwrap(input) == 0) {
++            revert("ln: input must be positive, zero is invalid");
++        }
++    
++        // Check if input is negative (MANTISSA_SIGN_MASK is bit 240)
++        if (packedFloat.unwrap(input) & MANTISSA_SIGN_MASK > 0) {
++            revert("ln: input must be positive, negative is invalid");
++        }
++
+         uint mantissa;
+         int exponent;
+         bool inputL;

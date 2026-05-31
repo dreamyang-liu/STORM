@@ -1,0 +1,22 @@
+id: 2024-07-munchables
+
+vulnerabilities:
+  - id: "H-01"
+    title: "Single plot can be occupied by multiple renters"
+    award: 0.39
+
+  - id: "H-02"
+    title: "Invalid validation in _farmPlots function allowing a malicious user repeated farming without locked funds"
+    award: 29.25
+
+  - id: "H-03"
+    title: "Miscalculation in _farmPlots function could lead to a user unable to unstake all NFTs"
+    award: 29.18
+
+  - id: "H-04"
+    title: "in farmPlots() an underflow in edge case leading to freeze of funds (NFT)"
+    award: 359.90
+
+  - id: "H-05"
+    title: "Failure to update dirty flag in transferToUnoccupiedPlot prevents reward accumulation on valid plot"
+    award: 87.16

@@ -1,0 +1,39 @@
+id: 2024-01-curves
+framework: hardhat
+base_commit: 79605f9208cc689e2e02b70f0f414397d6a51a51
+run_tests_invidually: true
+
+vulnerabilities:
+  - id: "H-02"
+    title: "Unrestricted claiming of fees due to missing balance updates in FeeSplitter"
+    test: "H-02 PoC: transferred tokens can claim past fees"
+    test_path_mapping:
+      "test/H-02-fee-splitter.ts": "test/H-02-fee-splitter.ts"
+    patch_path_mapping:
+      "patch/Curves.sol": "contracts/Curves.sol"
+    award: 0.18
+    exploit_task: true
+
+  - id: "H-03"
+    title: "Attack to make CurveSubject to be a HoneyPot"
+    award: 1.08
+    
+  - id: "H-04"
+    title: "Unauthorized Access to setCurves Function"
+    test: "H-04 PoC: any account can update FeeSplitter.curves"
+    test_path_mapping:
+      "test/H-04-set-curves.ts": "test/H-04-set-curves.ts"
+    patch_path_mapping:
+      "patch/FeeSplitter.sol": "contracts/FeeSplitter.sol"
+    award: 0.0
+    exploit_task: true
+  
+  - id: "H-05"
+    title: "Malformed equate statement"
+    test: "H-05 PoC: non-owner can call onlyOwner functions"
+    test_path_mapping:
+      "test/H-05-security-modifiers.ts": "test/H-05-security-modifiers.ts"
+    patch_path_mapping:
+      "patch/Security.sol": "contracts/Security.sol"
+    award: 0.0
+    exploit_task: true

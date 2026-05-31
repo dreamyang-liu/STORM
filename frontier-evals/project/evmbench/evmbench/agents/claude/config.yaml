@@ -1,0 +1,33 @@
+env-config-vars: &env-config-vars
+  ANTHROPIC_BASE_URL: https://api.anthropic.com
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  MODEL: claude-haiku-4-5-20251001
+
+common: &common_settings
+  start: claude/start.sh
+  instruction_file_name: CLAUDE.md
+  gateway_sni_hosts:
+    - api.anthropic.com
+
+claude-default:
+  <<: *common_settings
+  env_vars:
+    <<: *env-config-vars
+
+claude-opus-4.6:
+  <<: *common_settings
+  env_vars:
+    <<: *env-config-vars
+    MODEL: claude-opus-4-6
+
+claude-opus-4.5:
+  <<: *common_settings
+  env_vars:
+    <<: *env-config-vars
+    MODEL: claude-opus-4-5-20251101
+
+claude-sonnet-4.5:
+  <<: *common_settings
+  env_vars:
+    <<: *env-config-vars
+    MODEL: claude-sonnet-4-5-20250929

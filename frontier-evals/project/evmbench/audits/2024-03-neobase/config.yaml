@@ -1,0 +1,6 @@
+id: 2024-03-neobase
+
+vulnerabilities:
+  - id: "H-01"
+    title: "If a gauge that a user has voted for gets removed, their voting power allocated for that gauge will be lost"
+    award: 0.0
