@@ -40,11 +40,13 @@ echo ""
 
 # --- Init submodules ---
 echo "[2/6] Initializing submodules..."
+cd "$SCRIPT_DIR/.."
 git submodule init
 git submodule update --recursive
+cd "$SCRIPT_DIR"
 
-SDK_DIR="$SCRIPT_DIR/software-agent-sdk"
-EVALS_DIR="$SCRIPT_DIR/frontier-evals"
+SDK_DIR="$SCRIPT_DIR/../software-agent-sdk"
+EVALS_DIR="$SCRIPT_DIR/../frontier-evals"
 
 if [ ! -d "$SDK_DIR/openhands-sdk" ]; then
     echo "ERROR: software-agent-sdk submodule not found"

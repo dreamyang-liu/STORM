@@ -12,155 +12,135 @@ Multi-agent orchestration framework for code implementation (Commit0) and paper 
 
 - Python >= 3.12
 - [uv](https://docs.astral.sh/uv/) (Python package manager)
-- [Docker](https://docs.docker.com/get-docker/) (required by OpenHands)
+- [Docker](https://docs.docker.com/get-docker/)
 
-### Installation
+### Quick Start
 
 ```bash
-# Clone the repository
-git clone https://github.com/dreamyang-liu/STORM.git
-cd storm
+# Clone the repository (with submodules)
+git clone --recursive https://github.com/dreamyang-liu/STORM.git
+cd STORM/STORM
 
-# Install dependencies
+# Run the setup script (installs deps + builds Docker images)
+bash setup.sh
+
+# Set your API key
+source .env   # edit .env first to fill in LLM_API_KEY and OPENROUTER_API_KEY
+```
+
+### Manual Installation
+
+```bash
+cd STORM/STORM
+
+# Install Python dependencies
 uv sync
 
-# (Optional) Install visualization dependencies
-uv sync --extra viz
-
-# (Optional) Install development dependencies
-uv sync --extra dev
-
-# (Optional) Install PaperBench judge dependencies (see PaperBench Judge section below)
+# Build Docker image
+cd ../software-agent-sdk
+docker build \
+  -f openhands-agent-server/openhands/agent_server/docker/Dockerfile \
+  --target source-minimal-storm \
+  --platform linux/amd64 \
+  -t agent-server:storm-base \
+  .
+cd ../STORM
 ```
 
 ### Environment Variables
 
 ```bash
-export LLM_BASE_URL=<your-proxy-url>
+# Agent API (DashScope or OpenRouter)
 export LLM_API_KEY=<your-api-key>
+export LLM_BASE_URL=https://openrouter.ai/api/v1   # or https://dashscope.aliyuncs.com/compatible-mode/v1
+
+# Judge API (OpenRouter, for PaperBench evaluation)
+export OPENROUTER_API_KEY=<your-openrouter-key>
+
+# SDK path and state management
+export SDK_SOURCE_DIR=<path-to>/software-agent-sdk
+export MS_ENABLE=1
 ```
 
 ## Prepare Data
 
-Each task requires its own dataset under the `data/` directory.
-
 ### Commit0
 
-Download the [commit0_combined](https://huggingface.co/datasets/wentingzhao/commit0_combined) dataset and place it at:
+Download the [commit0_combined](https://huggingface.co/datasets/wentingzhao/commit0_combined) dataset:
 
-```
-data/commit0/commit0_combined/
+```bash
+# Place at data/commit0/commit0_combined_disk/
 ```
 
 ### PaperBench
 
-Place the PaperBench [data](https://github.com/openai/frontier-evals/tree/main/project/paperbench/data) at:
+Place the PaperBench data from [frontier-evals](https://github.com/openai/frontier-evals) at:
 
 ```
-data/paperbench/
-├── papers/
-│   ├── rice/
-│   │   ├── config.yaml
-│   │   ├── paper.pdf
-│   │   ├── paper.md
-│   │   ├── rubric.json
-│   │   ├── addendum.md
-│   │   ├── blacklist.txt
-│   │   └── assets/
-│   └── ...
-└── src/
-    └── paperbench/
-        └── instructions/
-            └── instructions.txt
+data/paperbench/papers/
+├── rice/
+│   ├── config.yaml
+│   ├── paper.pdf
+│   ├── paper.md
+│   ├── rubric.json
+│   ├── addendum.md
+│   └── blacklist.txt
+└── ...
 ```
 
-#### PaperBench Judge
-
-PaperBench evaluation requires the `paperbench` and `preparedness-turn-completer` packages from OpenAI's [frontier-evals](https://github.com/openai/frontier-evals) repo. These packages are not on PyPI, so install them directly:
-
+PaperBench judge requires additional packages:
 ```bash
-git clone https://github.com/openai/frontier-evals.git
-cd frontier-evals
-uv pip install -e "project/paperbench"
-uv pip install -e "project/preparedness_turn_completer"
+uv pip install -e ../frontier-evals/project/paperbench
+uv pip install -e ../frontier-evals/project/common/preparedness_turn_completer
 ```
 
 ## Running Experiments
 
-Two shell scripts are provided under `scripts/` for running experiments. Edit the parameters at the top of each script (model, task, paper_id/repo, iterations, etc.) before running.
-
-### Single-Agent Mode
+### Single-Agent Baseline
 
 ```bash
 bash scripts/run_single.sh
 ```
 
-Runs a single agent that performs the entire task (implement all functions for Commit0, or reproduce the paper for PaperBench). Key parameters:
-
-| Parameter | Description |
-|-----------|-------------|
-| `task` | `"commit0"` or `"paperbench"` |
-| `model` | LiteLLM model identifier |
-| `max_iterations` | Maximum LLM iterations for the agent |
-| `repo` | (Commit0) Repository name |
-| `paper_id` | (PaperBench) Paper identifier |
-
-### Multi-Agent Mode (STORM)
+### Multi-Agent (STORM)
 
 ```bash
 bash scripts/run_multi.sh
 ```
 
-Runs the STORM multi-agent workflow: a manager agent delegates tasks to multiple engineer subagents working in parallel on a shared workspace with state management for conflict detection. Key parameters:
+### Batch Run (all papers/repos in parallel)
+
+```bash
+bash scripts/run_batch.sh
+```
+
+Edit the parameters at the top of each script (model, task, paper_id/repo, etc.) before running.
+
+### Key Parameters
 
 | Parameter | Description |
 |-----------|-------------|
 | `task` | `"commit0"` or `"paperbench"` |
-| `model` | LiteLLM model identifier for the manager |
-| `subagent_model` | Model for subagents (leave empty to use the same model) |
-| `max_iterations` | Maximum LLM iterations for the manager |
+| `model` | LiteLLM model identifier (e.g., `openai/deepseek-v4-pro`) |
 | `max_subagents` | Number of parallel engineer subagents |
+| `max_iterations` | Maximum LLM iterations for the manager |
 | `sub_iterations` | Maximum LLM iterations per subagent |
 | `rounds_of_chat` | Maximum rounds of task assignment per engineer |
 
 ### Output
 
-Results are saved to `outputs/<task>/<model>/<identifier>/<mode>/<params>/`, including:
+Results are saved to `outputs/<task>/<model>/<identifier>/<mode>/<params>/`:
 - `cost.json` — token usage and cost breakdown
 - `runtime.txt` — wall-clock runtime in seconds
 - `outputs.jsonl` — structured event log
 - `grade.json` — (PaperBench) judge evaluation results
 - `report.json` — (Commit0) pytest results
 
+### Re-judge
 
-## Adding a New Task
-
-Each task is a self-contained file under `tasks/` that defines a config dataclass and a class that implements the `TaskModule` interface. See `tasks/commit0.py` or `tasks/paperbench.py` as examples.
-
-### Steps
-
-1. Create `tasks/my_task.py` with a `MyTaskConfig` dataclass for task-specific parameters (docker image, data paths, etc.) and a `MyTask` class that extends `TaskModule`.
-
-2. Implement the six abstract methods defined in `tasks/base.py`:
-
-   | Method | Purpose |
-   |--------|---------|
-   | `get_docker_image()` | Return the Docker image for the workspace container |
-   | `get_work_dir()` | Return the working directory inside the container |
-   | `get_workspace_config()` | Return a dict of parameters for workspace construction |
-   | `load_task_data()` | Load task data from disk or dataset, store internally |
-   | `setup_workspace(workspace)` | Prepare the container (clone repos, install deps, upload files) |
-   | `evaluate(workspace)` | Run evaluation after the agent finishes, return a results dict |
-
-3. Register in `tasks/__init__.py` by adding the import.
-
-### Existing tasks
-
-| Task | Description |
-|------|-------------|
-| `Commit0Task` | Implement functions in Python repos, evaluated via pytest |
-| `PaperbenchTask` | Reproduce research papers, evaluated via reproduce.sh + LLM judge |
-
+```bash
+bash scripts/rejudge.sh <output_dir> [paper1 paper2 ...]
+```
 
 ## Citation
 
