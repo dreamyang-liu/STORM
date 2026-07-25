@@ -90,6 +90,10 @@ async def run_workflow_inner(task, workflow_config, task_module, multi_agent=Tru
     os.environ["MS_WORKSPACE"] = repo_dir
 
     gpu_device = os.environ.get("GPU_DEVICE")
+    enable_gpu = os.environ.get("ENABLE_GPU", "1").strip().lower() not in {
+        "0", "false", "no", "off",
+    }
+    print(f"[Setup] GPU passthrough: {'enabled' if enable_gpu else 'disabled'}")
 
     if workspace_config.get("base_image"):
         workspace_ctx = DockerDevWorkspace(
@@ -103,7 +107,7 @@ async def run_workflow_inner(task, workflow_config, task_module, multi_agent=Tru
                 "MS_ENABLE", "MS_WORKSPACE",
                 "LLM_API_KEY", "LLM_BASE_URL",
             ],
-            enable_gpu=True,
+            enable_gpu=enable_gpu,
             gpu_device=gpu_device,
             keep_alive=keep_alive,
         )
@@ -117,7 +121,7 @@ async def run_workflow_inner(task, workflow_config, task_module, multi_agent=Tru
                 "MS_ENABLE", "MS_WORKSPACE",
                 "LLM_API_KEY", "LLM_BASE_URL",
             ],
-            enable_gpu=True,
+            enable_gpu=enable_gpu,
             gpu_device=gpu_device,
             keep_alive=keep_alive,
         )

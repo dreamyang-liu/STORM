@@ -1100,6 +1100,31 @@ def save_all_costs(
 
 
 def build_llm_kwargs(model_name):
+    if model_name.startswith("bedrock/"):
+        region = (
+            os.getenv("AWS_REGION_NAME")
+            or os.getenv("AWS_REGION")
+            or os.getenv("AWS_DEFAULT_REGION")
+        )
+        if not region:
+            raise ValueError(
+                "Please set AWS_REGION_NAME, AWS_REGION, or AWS_DEFAULT_REGION "
+                "for Bedrock models"
+            )
+        kwargs = {
+            "model": model_name,
+            "aws_region_name": region,
+        }
+        access_key = os.getenv("AWS_ACCESS_KEY_ID")
+        secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
+        session_token = os.getenv("AWS_SESSION_TOKEN")
+        if access_key and secret_key:
+            kwargs["aws_access_key_id"] = SecretStr(access_key)
+            kwargs["aws_secret_access_key"] = SecretStr(secret_key)
+        if session_token:
+            kwargs["aws_session_token"] = SecretStr(session_token)
+        return kwargs
+
     api_key = os.getenv("LLM_API_KEY")
     if not api_key:
         raise ValueError("Please set LLM_API_KEY environment variable")
