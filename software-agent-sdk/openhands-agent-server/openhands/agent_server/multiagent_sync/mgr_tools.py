@@ -60,47 +60,14 @@ def _build_coord_note(agent_id: str) -> str:
 # === MULTI-AGENT WORKSPACE RULES (read carefully — this changes your behavior) ===
 
 You are acting as `{agent_id}`. Other agents (different agent ids) are
-editing these same files concurrently. Follow BOTH rules below on EVERY
-edit.
+editing these same files concurrently.
 
-## RULE 1 — REQUIRED: annotate every edit with an intent comment
+## Shared workspace discipline
 
-Whenever you add, modify, or extend any block of code (whether with
-str_replace, create, or insert), you MUST include an intent comment line
-using the file's native comment syntax. Exact format:
-
-    # {agent_id}: <one-line description of what this block accomplishes>
-
-Place it on the line immediately BEFORE the block it describes.
-
-Example — if your task is "Add input validation to add()", a correct edit's
-`new_str` looks like this:
-
-    # {agent_id}: validate numeric inputs before summing
-    def add(a, b):
-        if not isinstance(a, (int, float)):
-            raise TypeError("a must be numeric")
-        if not isinstance(b, (int, float)):
-            raise TypeError("b must be numeric")
-        return a + b
-
-Use `#` for Python/Shell/YAML/Ruby, `//` for C/JS/TS/Go/Java/Rust.
-One comment per logical change — do NOT annotate every line.
-
-## RULE 2 — REQUIRED: preserve annotations from OTHER agents
-
-When viewing code, you will see comment lines like:
-
-    # agent-X: <intent>
-    <block>
-
-If the agent id in the comment is NOT `{agent_id}`, that block belongs to
-another agent's task. You MUST preserve it verbatim unless your own task
-explicitly requires changing it. If you do have to change it, update the
-`# agent-X:` comment rather than deleting it silently.
-
-If you re-edit a block YOU previously annotated, keep the comment accurate
-(rewrite it if the intent evolved; do not stack multiple comments).
+- Stay within the files and functions assigned to you.
+- Preserve unrelated work already present in the shared workspace.
+- If another agent changes a file after you read it, inspect the fresh
+  content returned by the tool and re-plan your edit against that version.
 
 ## Concurrency control (passive — the Manager enforces this)
 
@@ -110,8 +77,7 @@ If you re-edit a block YOU previously annotated, keep the comment accurate
   content. Re-plan on the new baseline — do NOT retry the same write.
 - `undo_edit` is DISABLED. To revert, use `str_replace` on current content.
 
-The intent-comment rules (1 and 2) are your PRIMARY coordination channel
-with other agents. The diff-on-conflict is only a backstop.
+Coordination is enforced by the Manager's version and snapshot checks.
 """
 
 
