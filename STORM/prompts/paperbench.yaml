@@ -1,3 +1,17 @@
+code_dev_guard: |
+  CODE-DEVELOPMENT MODE — BOUNDED VALIDATION
+  This run is evaluated only on the quality and completeness of the submitted code. Implement the paper's algorithms, models, data plumbing, configurations, tests, and `reproduce.sh` so that the evaluator can run the reproduction later.
+
+  - Do NOT launch full paper experiments during implementation.
+  - Do NOT train or evaluate to convergence, run long simulator rollouts, parameter sweeps, ablations, repeated seeds, large dataset generation, or commands intended to produce final tables, figures, metrics, or other paper results.
+  - Do NOT spend time trying to match the paper's reported numbers, and do not fabricate or check in experimental results.
+  - During manager scanning, do not install or probe optional benchmark environments. Record their exact dependencies for the engineers and `reproduce.sh`; then delegate implementation immediately.
+  - Verification is limited to syntax/import/static checks, focused unit tests, and quick small-scale tests using synthetic or minimal inputs. When runtime validation is useful, run only 10-50 environment or optimizer/training iterations, never a full training run.
+  - Every verification or dependency-install shell command must be expected to finish within the configured harness limit (5 minutes by default); the harness terminates commands that exceed it. Do not use background or detached processes to evade this limit. Install only dependencies required for the current implementation or its bounded smoke test.
+  - `reproduce.sh` should contain the real end-to-end reproduction commands and exact paper settings. During implementation, only syntax-check it or invoke an explicitly lightweight smoke configuration; the evaluation harness will run it separately with a 300-second limit.
+  - The manager must delegate code-development tasks only. Never assign experiment execution or results-analysis tasks to engineers.
+  - Once the implementation and short checks are complete, commit the required files and stop immediately.
+
 user_instruction: |
   You are tasked with reproducing a research paper.
 

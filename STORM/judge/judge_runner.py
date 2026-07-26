@@ -5,9 +5,12 @@ import asyncio
 import copy
 import json
 import os
+import re
 from pathlib import Path
 import fire
 from litellm import cost_per_token
+from openai import NOT_GIVEN
+from paperbench.judge.graded_task_node import GradedTaskNode
 from paperbench.judge.create_judge import create_judge, handle_judge_kwargs
 from paperbench.judge.simple import ParsedJudgeResponseFloat, ParsedJudgeResponseInt
 from paperbench.judge.token_usage import get_total_token_usage
@@ -17,8 +20,55 @@ from preparedness_turn_completer.oai_completions_turn_completer import (
     OpenAICompletionsTurnCompleter,
 )
 
+from judge.bedrock_mantle_turn_completer import (
+    BedrockMantleTurnCompleter,
+    is_bedrock_mantle_model,
+)
+from judge.bedrock_turn_completer import BedrockTurnCompleter, is_bedrock_model
+
 
 DEFAULT_DATA_DIR = str(Path(__file__).resolve().parents[1] / "data" / "paperbench")
+SCORE_AFTER_HEADING_RE = re.compile(
+    r"#\s*Score\b.{0,100}?\b([01])(?:\.0)?\b",
+    flags=re.IGNORECASE | re.DOTALL,
+)
+
+
+def _load_resumable_leaf_results(log_dir):
+    """Load completed leaf grades from SimpleJudge message transcripts."""
+    if not log_dir:
+        return {}
+
+    cached = {}
+    for message_path in Path(log_dir).glob("*_messages.jsonl"):
+        try:
+            messages = [
+                json.loads(line)
+                for line in message_path.read_text().splitlines()
+                if line.strip()
+            ]
+            assistant_messages = [
+                message.get("content", "")
+                for message in messages
+                if message.get("role") == "assistant"
+            ]
+            if not assistant_messages:
+                continue
+
+            response = assistant_messages[-1]
+            match = SCORE_AFTER_HEADING_RE.search(response)
+            if not match:
+                continue
+
+            node_id = message_path.name.removesuffix("_messages.jsonl")
+            cached[node_id] = {
+                "score": int(match.group(1)),
+                "response": response,
+                "source": str(message_path),
+            }
+        except (OSError, json.JSONDecodeError):
+            continue
+    return cached
 
 
 def _content_mentions_json(content):
@@ -75,38 +125,70 @@ def _patch_structured_output_requests():
     OpenAICompletionsTurnCompleter._storm_json_hint_patch = True
 
 
+def _build_completer_config(
+    judge_model,
+    response_format=NOT_GIVEN,
+    max_tokens=4096,
+):
+    if is_bedrock_mantle_model(judge_model):
+        config_class = BedrockMantleTurnCompleter.Config
+    elif is_bedrock_model(judge_model):
+        config_class = BedrockTurnCompleter.Config
+    else:
+        config_class = OpenAICompletionsTurnCompleter.Config
+    kwargs = {
+        "model": judge_model,
+        "max_tokens": max_tokens,
+    }
+    if response_format is not NOT_GIVEN:
+        kwargs["response_format"] = response_format
+    if not is_bedrock_model(judge_model):
+        kwargs["reasoning_effort"] = "low"
+    return config_class(**kwargs)
+
+
 def run(
     submission_path,
     paper_id,
     result_file,
     judge_type="simple",
-    judge_model="openrouter/anthropic/claude-sonnet-4-6",
+    judge_model="bedrock-mantle/openai.gpt-5.5",
     max_depth=999,
     code_dev=True,
     log_dir=None,
+    resume_from_log_dir=None,
     data_dir=None,
 ):
     os.environ["PAPERBENCH_DATA_DIR"] = data_dir or os.environ.get(
         "PAPERBENCH_DATA_DIR", DEFAULT_DATA_DIR
     )
 
-    # Judge uses JUDGE_API_KEY/JUDGE_BASE_URL if set, otherwise falls back to LLM_API_KEY/LLM_BASE_URL
-    judge_key = os.environ.get("JUDGE_API_KEY") or os.environ.get("OPENROUTER_API_KEY") or os.environ.get("LLM_API_KEY")
-    judge_base = os.environ.get("JUDGE_BASE_URL") or "https://openrouter.ai/api/v1"
-    if judge_key:
-        os.environ["OPENAI_API_KEY"] = judge_key
-    os.environ["OPENAI_BASE_URL"] = judge_base
-
-    _patch_structured_output_requests()
+    if is_bedrock_model(judge_model) or is_bedrock_mantle_model(judge_model):
+        max_concurrency = int(os.getenv("BEDROCK_JUDGE_MAX_CONCURRENCY", "4"))
+    else:
+        # OpenAI-compatible judges use JUDGE_API_KEY/JUDGE_BASE_URL, then
+        # fall back to the historical OpenRouter/LLM environment variables.
+        judge_key = (
+            os.environ.get("JUDGE_API_KEY")
+            or os.environ.get("OPENROUTER_API_KEY")
+            or os.environ.get("LLM_API_KEY")
+        )
+        judge_base = os.environ.get("JUDGE_BASE_URL") or "https://openrouter.ai/api/v1"
+        if judge_key:
+            os.environ["OPENAI_API_KEY"] = judge_key
+        os.environ["OPENAI_BASE_URL"] = judge_base
+        _patch_structured_output_requests()
+        max_concurrency = 100
 
     completer_config = None
     if judge_type == "simple":
-        completer_config = OpenAICompletionsTurnCompleter.Config(model=judge_model)
+        completer_config = _build_completer_config(judge_model)
 
     submission_path = Path(submission_path)
     out_dir = Path(log_dir) if log_dir else None
     if out_dir:
         out_dir.mkdir(parents=True, exist_ok=True)
+    cached_leaf_results = _load_resumable_leaf_results(resume_from_log_dir)
 
     async def _run():
         paper = paper_registry.get_paper(paper_id)
@@ -125,13 +207,13 @@ def run(
         # Use reasoning_effort="low" and high max_tokens because the parsing
         # task is trivial and reasoning models waste output tokens on thinking.
         if judge_type == "simple" and completer_config is not None:
-            judge_kwargs["float_completer_config"] = OpenAICompletionsTurnCompleter.Config(
-                model=judge_model, response_format=ParsedJudgeResponseFloat,
-                reasoning_effort="low", max_tokens=4096,
+            judge_kwargs["float_completer_config"] = _build_completer_config(
+                judge_model,
+                response_format=ParsedJudgeResponseFloat,
             )
-            judge_kwargs["int_completer_config"] = OpenAICompletionsTurnCompleter.Config(
-                model=judge_model, response_format=ParsedJudgeResponseInt,
-                reasoning_effort="low", max_tokens=4096,
+            judge_kwargs["int_completer_config"] = _build_completer_config(
+                judge_model,
+                response_format=ParsedJudgeResponseInt,
             )
 
         judge = create_judge(
@@ -146,7 +228,24 @@ def run(
             log_path=out_dir,
             max_depth=max_depth,
         )
-        return await judge.judge()
+        judge.leaf_semaphore = asyncio.Semaphore(max(1, max_concurrency))
+
+        async def grade_leaf_with_resume(task):
+            cached = cached_leaf_results.get(task.id)
+            if cached is None:
+                return await judge.grade_leaf(task)
+            return GradedTaskNode.from_task(
+                task,
+                score=cached["score"],
+                valid_score=True,
+                explanation=cached["response"],
+                judge_metadata={
+                    "full_judge_response": cached["response"],
+                    "resumed_from": cached["source"],
+                },
+            )
+
+        return await judge.judge(grade_leaf_fn=grade_leaf_with_resume)
 
     graded_tree = asyncio.run(_run())
 
@@ -166,6 +265,7 @@ def run(
         "score": graded_tree.score,
         "num_nodes": len(leaf_nodes),
         "num_invalid_nodes": len([n for n in leaf_nodes if not n.valid_score]),
+        "num_resumed_nodes": sum(node.id in cached_leaf_results for node in leaf_nodes),
         "token_usage": token_usage.to_dict(),
         "cost": total_cost,
         "graded_task_tree": graded_tree.to_dict(),
@@ -176,6 +276,7 @@ def run(
 
     print(f"Judge score: {result['score']}")
     print(f"Nodes: {result['num_nodes']}, Invalid: {result['num_invalid_nodes']}")
+    print(f"Resumed nodes: {result['num_resumed_nodes']}")
     print(f"Judge cost: ${total_cost:.4f}")
     print(f"Results saved to: {result_file}")
 

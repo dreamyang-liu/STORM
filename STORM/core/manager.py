@@ -9,6 +9,7 @@ from openhands.tools.preset.default import get_default_tools
 from config import SubAgent
 from core.utils import (
     PanelVisualizer,
+    apply_code_dev_terminal_timeout,
     build_delegation_plan,
     build_delegation_prompt,
     count_llm_iterations,
@@ -124,6 +125,7 @@ class Manager:
     def setup(self, mode="multi_agent"):
         self.log(f"Setting up agent in {mode} mode...")
         tools = get_default_tools(enable_browser=False)
+        tools = apply_code_dev_terminal_timeout(tools, self.task.config)
         for t in tools:
             if t.name == "file_editor":
                 t.params["agent_id"] = "manager"

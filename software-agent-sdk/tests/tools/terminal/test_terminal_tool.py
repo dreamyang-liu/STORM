@@ -1,8 +1,10 @@
 """Tests for TerminalTool subclass."""
 
+import shutil
 import tempfile
 from uuid import uuid4
 
+import pytest
 from pydantic import SecretStr
 
 from openhands.sdk.agent import Agent
@@ -105,3 +107,71 @@ def test_bash_tool_to_openai_tool():
         assert openai_tool["function"]["name"] == "terminal"
         assert "description" in openai_tool["function"]
         assert "parameters" in openai_tool["function"]
+
+
+@pytest.mark.parametrize(
+    "terminal_type",
+    [
+        "subprocess",
+        pytest.param(
+            "tmux",
+            marks=pytest.mark.skipif(
+                shutil.which("tmux") is None,
+                reason="tmux is not installed",
+            ),
+        ),
+    ],
+)
+def test_harness_command_timeout_is_clamped_and_terminates_process(terminal_type):
+    """A model cannot request a timeout above the harness hard limit."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        conv_state = _create_test_conv_state(temp_dir)
+        tools = TerminalTool.create(
+            conv_state,
+            terminal_type=terminal_type,
+            max_command_timeout_seconds=0.2,
+        )
+        tool = tools[0]
+        assert tool.executor is not None
+
+        try:
+            result = tool(
+                TerminalAction(
+                    command="sleep 10",
+                    timeout=3600,
+                )
+            )
+
+            assert result.timeout is True
+            assert result.exit_code == 124
+            assert result.metadata.exit_code == 124
+            assert "terminated by the harness after 0.2 seconds" in (
+                result.metadata.suffix
+            )
+
+            followup = tool(TerminalAction(command="echo terminal-reset-worked"))
+            assert followup.exit_code == 0
+            assert "terminal-reset-worked" in followup.text
+        finally:
+            tool.executor.close()
+
+
+def test_harness_command_timeout_is_applied_when_model_omits_timeout():
+    """Commands without a model-selected timeout still receive the hard cap."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        conv_state = _create_test_conv_state(temp_dir)
+        tools = TerminalTool.create(
+            conv_state,
+            terminal_type="subprocess",
+            max_command_timeout_seconds=300,
+        )
+        tool = tools[0]
+        assert tool.executor is not None
+
+        try:
+            bounded = tool.executor._apply_command_timeout_cap(
+                TerminalAction(command="python train.py")
+            )
+            assert bounded.timeout == 300
+        finally:
+            tool.executor.close()

@@ -7,6 +7,7 @@ from openhands.tools.preset.default import get_default_tools
 from config import SubAgent, SubAgentResult
 from core.utils import (
     PanelVisualizer,
+    apply_code_dev_terminal_timeout,
     build_subagent_prompt,
     extract_conversation_metrics,
     count_llm_iterations,
@@ -62,6 +63,7 @@ class SubAgentRunner:
     def setup(self):
         self.log("Setting up subagent...")
         tools = get_default_tools(enable_browser=False)
+        tools = apply_code_dev_terminal_timeout(tools, self.task_module.config)
         for t in tools:
             if t.name == "file_editor":
                 t.params["agent_id"] = self.subagent.engineer_id

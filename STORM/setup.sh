@@ -97,7 +97,7 @@ echo "  agent-server:storm-base (commit0)"
 # Build PaperBench image
 docker build \
     -f openhands-agent-server/openhands/agent_server/docker/Dockerfile \
-    --target source-minimal \
+    --target source-minimal-storm \
     --platform linux/amd64 \
     -t agent-server:local \
     . 2>&1 | tail -5
@@ -114,14 +114,14 @@ if [ ! -f "$ENV_FILE" ]; then
 # STORM Environment Configuration
 # Source this before running: source .env
 
-# Agent API (DashScope or OpenRouter)
-# DashScope: LLM_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
-# OpenRouter: LLM_BASE_URL=https://openrouter.ai/api/v1
-export LLM_API_KEY=
-export LLM_BASE_URL=https://openrouter.ai/api/v1
-
-# Judge API (OpenRouter for Claude judge: openrouter/anthropic/claude-sonnet-4-6)
-export OPENROUTER_API_KEY=
+# Bedrock agent and PaperBench judge. The normal boto3 credential provider
+# chain is used, so prefer an IAM role or shared AWS credentials file.
+export AWS_REGION_NAME=us-west-2
+export LLM_MODEL=bedrock/us.anthropic.claude-sonnet-4-6
+export JUDGE_MODEL=bedrock-mantle/openai.gpt-5.5
+# GPT-5.5 is served by Bedrock Mantle in us-east-1/us-east-2.
+export BEDROCK_MANTLE_REGION=us-east-1
+export BEDROCK_JUDGE_MAX_CONCURRENCY=4
 
 # SDK source directory
 export SDK_SOURCE_DIR="$SDK_DIR"

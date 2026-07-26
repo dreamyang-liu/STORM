@@ -6,7 +6,7 @@
 export LLM_API_KEY="${LLM_API_KEY:-}"
 export LLM_BASE_URL="${LLM_BASE_URL:-https://openrouter.ai/api/v1}"
 export OPENROUTER_API_KEY="${OPENROUTER_API_KEY:-$LLM_API_KEY}"
-export SDK_SOURCE_DIR="${SDK_SOURCE_DIR:-$(cd "$(dirname "$0")/.." && pwd)/software-agent-sdk}"
+export SDK_SOURCE_DIR="${SDK_SOURCE_DIR:-$(cd "$(dirname "$0")/../.." && pwd)/software-agent-sdk}"
 
 # ===================== Configuration =====================
 task="paperbench"           # "commit0" or "paperbench"
@@ -19,9 +19,10 @@ dataset_path="data/commit0/commit0_combined_disk"
 
 # PaperBench settings
 paper_id="rice"
-judge_model="openrouter/anthropic/claude-sonnet-4-6"
+judge_model="${JUDGE_MODEL:-bedrock-mantle/openai.gpt-5.5}"
 test_max_depth=999
-test_reproduce_timeout=3600
+test_reproduce_timeout="${TEST_REPRODUCE_TIMEOUT:-300}"
+agent_command_timeout="${PAPERBENCH_AGENT_COMMAND_TIMEOUT:-300}"
 code_dev=true
 
 # ===================== Run =====================
@@ -29,6 +30,7 @@ flags="--nomulti_agent"
 
 if [ "$task" = "paperbench" ]; then
     flags="$flags --test_max_depth=$test_max_depth --test_reproduce_timeout=$test_reproduce_timeout"
+    flags="$flags --agent_command_timeout=$agent_command_timeout"
     flags="$flags --judge_type=simple --judge_model=$judge_model"
     [ "$code_dev" = "true" ] && flags="$flags --code_dev" || flags="$flags --nocode_dev"
 

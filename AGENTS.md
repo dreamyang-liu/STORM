@@ -139,6 +139,41 @@ The model used for the runs below is:
 bedrock/us.anthropic.claude-sonnet-4-6
 ```
 
+PaperBench can use the same Bedrock model and AWS credentials for its judge.
+No OpenRouter key is required in this configuration:
+
+```bash
+export LLM_MODEL=bedrock/us.anthropic.claude-sonnet-4-6
+export JUDGE_MODEL=bedrock/us.anthropic.claude-sonnet-4-6
+export BEDROCK_JUDGE_MAX_CONCURRENCY=4
+```
+
+The judge uses the native Bedrock Converse API. Its structured grading replies
+are validated locally, so the model does not need Bedrock native structured
+output support.
+
+To launch the prepared two-engineer PaperBench STORM case after supplying AWS
+credentials:
+
+```bash
+cd /path/to/STORM/STORM
+set -a
+source .env
+set +a
+PAPER_ID=rice RUN_ID=sonnet46-rice-storm-r1 bash scripts/run_multi.sh
+```
+
+This runs two engineer subagents for 80 iterations, a 50-iteration manager, two
+rounds of manager/engineer discussion, and the code-development-only judge.
+As in CAID's public PaperBench harness, the submitted `reproduce.sh` is run for
+at most 300 seconds before judging. Set `TEST_REPRODUCE_TIMEOUT` only when a
+different bounded validation timeout is intentional.
+During PaperBench code-dev, every manager/subagent terminal command is also
+hard-limited to 300 seconds. The agent cannot raise the limit through the tool's
+own timeout argument. Set `PAPERBENCH_AGENT_COMMAND_TIMEOUT` to change this
+limit explicitly.
+Keep the run ID unique to avoid overwriting an earlier result.
+
 ## Single-agent smoke test
 
 Use `cachetools` as the small initial validation:

@@ -482,6 +482,61 @@ def load_prompts(task="commit0", prompts_path=None):
         return yaml.safe_load(f)
 
 
+CODE_DEV_PROMPT_KEYS = (
+    "user_instruction",
+    "scan_analysis",
+    "task_delegation",
+    "assign_task",
+    "single_agent_instruction",
+    "subagent_prompt",
+    "followup_prompt",
+    "auto_reassign",
+    "manager_final_review_all",
+)
+
+
+def apply_code_dev_prompt_guard(prompts, enabled=False):
+    """Append the PaperBench code-development guard to every agent phase."""
+    if not enabled:
+        return prompts
+
+    guard = (prompts or {}).get("code_dev_guard", "").strip()
+    if not guard:
+        raise ValueError(
+            "PaperBench code_dev mode requires a non-empty code_dev_guard prompt"
+        )
+
+    guarded_prompts = dict(prompts)
+    for key in CODE_DEV_PROMPT_KEYS:
+        template = guarded_prompts.get(key)
+        if template and guard not in template:
+            guarded_prompts[key] = f"{template.rstrip()}\n\n{guard}\n"
+
+    return guarded_prompts
+
+
+def apply_code_dev_terminal_timeout(tools, task_config):
+    """Inject the PaperBench code-dev shell timeout into the terminal tool."""
+    if not bool(getattr(task_config, "code_dev", False)):
+        return tools
+
+    timeout = getattr(task_config, "agent_command_timeout", None)
+    if timeout is None or timeout <= 0:
+        raise ValueError(
+            "PaperBench code_dev mode requires agent_command_timeout > 0"
+        )
+
+    terminal_found = False
+    for tool in tools:
+        if tool.name == "terminal":
+            tool.params["max_command_timeout_seconds"] = timeout
+            terminal_found = True
+
+    if not terminal_found:
+        raise ValueError("PaperBench code_dev mode requires the terminal tool")
+    return tools
+
+
 def get_paper_info(config):
     """Load paper information from the paperbench data directory."""
     papers_dir = Path(config.paperbench_dir) / "papers" / config.paper_id
@@ -1159,6 +1214,7 @@ def build_task_module(task, **kwargs):
             "paperbench_dir": "paperbench_dir",
             "test_max_depth": "test_max_depth",
             "test_reproduce_timeout": "test_reproduce_timeout",
+            "agent_command_timeout": "agent_command_timeout",
             "judge_type": "judge_type",
             "judge_model": "judge_model",
             "code_dev": "code_dev",

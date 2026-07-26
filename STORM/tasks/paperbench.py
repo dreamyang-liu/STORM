@@ -11,7 +11,6 @@ import tempfile
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 import yaml
 
@@ -27,8 +26,9 @@ class PaperbenchConfig:
     paperbench_dir: str = "data/paperbench"
     test_max_depth: int = 999
     test_reproduce_timeout: int = 300
+    agent_command_timeout: int = 300
     judge_type: str = "simple"
-    judge_model: str = "neulab/gpt-5-mini"
+    judge_model: str = "bedrock-mantle/openai.gpt-5.5"
     code_dev: bool = True
     output_dir: str = "outputs"
 
@@ -200,53 +200,51 @@ class PaperbenchTask(TaskModule):
             print("[PaperBench] reproduce.sh not found, skipping test")
             return result
 
-        if config.code_dev:
-            print("[PaperBench] code_dev mode: skipping reproduce.sh execution")
+        # Match CAID's code-dev harness: execute the submitted reproduction
+        # script, but cap it at the configured short validation timeout.
+        print(f"[PaperBench] Running reproduce.sh (timeout: {config.test_reproduce_timeout}s)...")
+        reproduce_start = datetime.now()
+
+        workspace.execute_command(
+            "cd /workspace/submission && "
+            "find . -type f -size -500k "
+            r"\( -name '*.py' -o -name '*.sh' -o -name '*.yaml' -o -name '*.yml' "
+            r"-o -name '*.json' -o -name '*.toml' -o -name '*.cfg' -o -name '*.ini' "
+            r"-o -name '*.txt' -o -name '*.md' -o -name '*.rst' -o -name '*.tex' "
+            r"-o -name '*.bib' -o -name '*.csv' -o -name '*.tsv' "
+            r"-o -name '*.r' -o -name '*.R' -o -name '*.jl' -o -name '*.m' "
+            r"-o -name '*.c' -o -name '*.cpp' -o -name '*.h' -o -name '*.hpp' "
+            r"-o -name '*.java' -o -name '*.js' -o -name '*.ts' -o -name '*.html' "
+            r"-o -name '*.css' -o -name '*.xml' -o -name '*.ipynb' -o -name '*.lock' "
+            r"-o -name 'Makefile' -o -name 'Dockerfile' -o -name '*.dockerfile' "
+            r"-o -name 'requirements*.txt' -o -name '*.log' \) "
+            "-not -path './.git/*' -print0 | xargs -0 git add -- 2>/dev/null; "
+            "git commit -m 'auto-commit before reproduce' --allow-empty 2>&1 || true",
+            timeout=60,
+        )
+        workspace.execute_command(
+            "cd /workspace/submission && git clean -fd 2>&1 || true", timeout=60
+        )
+        reproduce_timeout = config.test_reproduce_timeout
+        reproduce_result = workspace.execute_command(
+            f"cd /workspace/submission && timeout {reproduce_timeout} bash reproduce.sh 2>&1 "
+            f'| tee reproduce.log; echo "EXIT_CODE=${{PIPESTATUS[0]}}"',
+            timeout=reproduce_timeout + 60,
+        )
+
+        reproduce_end = datetime.now()
+        result["reproduce_duration"] = (reproduce_end - reproduce_start).total_seconds()
+
+        output = reproduce_result.stdout or ""
+        if len(output) > 10000:
+            result["reproduce_log"] = output[:5000] + "\n...[truncated]...\n" + output[-5000:]
         else:
-            # Run reproduce.sh
-            print(f"[PaperBench] Running reproduce.sh (timeout: {config.test_reproduce_timeout}s)...")
-            reproduce_start = datetime.now()
-
-            workspace.execute_command(
-                "cd /workspace/submission && "
-                "find . -type f -size -500k "
-                r"\( -name '*.py' -o -name '*.sh' -o -name '*.yaml' -o -name '*.yml' "
-                r"-o -name '*.json' -o -name '*.toml' -o -name '*.cfg' -o -name '*.ini' "
-                r"-o -name '*.txt' -o -name '*.md' -o -name '*.rst' -o -name '*.tex' "
-                r"-o -name '*.bib' -o -name '*.csv' -o -name '*.tsv' "
-                r"-o -name '*.r' -o -name '*.R' -o -name '*.jl' -o -name '*.m' "
-                r"-o -name '*.c' -o -name '*.cpp' -o -name '*.h' -o -name '*.hpp' "
-                r"-o -name '*.java' -o -name '*.js' -o -name '*.ts' -o -name '*.html' "
-                r"-o -name '*.css' -o -name '*.xml' -o -name '*.ipynb' -o -name '*.lock' "
-                r"-o -name 'Makefile' -o -name 'Dockerfile' -o -name '*.dockerfile' "
-                r"-o -name 'requirements*.txt' -o -name '*.log' \) "
-                "-not -path './.git/*' -print0 | xargs -0 git add -- 2>/dev/null; "
-                "git commit -m 'auto-commit before reproduce' --allow-empty 2>&1 || true",
-                timeout=60,
-            )
-            workspace.execute_command(
-                "cd /workspace/submission && git clean -fd 2>&1 || true", timeout=60
-            )
-            reproduce_timeout = config.test_reproduce_timeout
-            reproduce_result = workspace.execute_command(
-                f"cd /workspace/submission && timeout {reproduce_timeout} bash reproduce.sh 2>&1 "
-                f'| tee reproduce.log; echo "EXIT_CODE=${{PIPESTATUS[0]}}"',
-                timeout=reproduce_timeout + 60,
-            )
-
-            reproduce_end = datetime.now()
-            result["reproduce_duration"] = (reproduce_end - reproduce_start).total_seconds()
-
-            output = reproduce_result.stdout or ""
-            if len(output) > 10000:
-                result["reproduce_log"] = output[:5000] + "\n...[truncated]...\n" + output[-5000:]
-            else:
-                result["reproduce_log"] = output
-            result["reproduce_success"] = (
-                reproduce_result.exit_code == 0 or "EXIT_CODE=0" in output
-            )
-            print(f"[PaperBench] reproduce.sh: success={result['reproduce_success']}, "
-                  f"duration={result['reproduce_duration']:.1f}s")
+            result["reproduce_log"] = output
+        result["reproduce_success"] = (
+            reproduce_result.exit_code == 0 or "EXIT_CODE=0" in output
+        )
+        print(f"[PaperBench] reproduce.sh: success={result['reproduce_success']}, "
+              f"duration={result['reproduce_duration']:.1f}s")
 
         # Run judge via subprocess
         if config.test_max_depth > 0:
@@ -288,7 +286,7 @@ class PaperbenchTask(TaskModule):
 
                     submission_path = extract_dir / "submission"
                     if not submission_path.exists():
-                        raise RuntimeError(f"Submission directory not found after extraction")
+                        raise RuntimeError("Submission directory not found after extraction")
 
                     agent_python = os.environ.get("JUDGE_PYTHON", sys.executable)
                     judge_runner = str(
@@ -312,9 +310,13 @@ class PaperbenchTask(TaskModule):
                     if config.code_dev:
                         cmd.append("--code_dev")
 
-                    print(f"[PaperBench] Running judge subprocess...")
+                    judge_timeout = int(os.getenv("PAPERBENCH_JUDGE_TIMEOUT", "7200"))
+                    print(
+                        "[PaperBench] Running judge subprocess "
+                        f"(timeout={judge_timeout}s)..."
+                    )
                     proc = subprocess.run(
-                        cmd, capture_output=True, text=True, timeout=3600,
+                        cmd, capture_output=True, text=True, timeout=judge_timeout,
                     )
 
                     if proc.returncode != 0:

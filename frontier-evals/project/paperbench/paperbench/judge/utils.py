@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import AsyncGenerator, Generator
 
 import structlog.stdlib
-from drain3 import TemplateMiner
 
 from nanoeval.solvers.computer_tasks.code_execution_interface import ComputerInterface
 from paperbench.infra.alcatraz import (
@@ -129,35 +128,31 @@ def reduce_log(input_string: str) -> str:
     """
     Reduce a multi-line log string to a filtered version with repeated lines collapsed.
     """
-    template_miner = TemplateMiner()
     output_lines = []
 
-    previous_cluster_id = None
+    previous_template = None
     repeat_count = 1
 
     for raw_line in input_string.splitlines():
         original_line = raw_line
         sanitized = sanitize_line(original_line)
 
-        result = template_miner.add_log_message(sanitized)
-        cluster_id = result["cluster_id"]
-
-        if previous_cluster_id is None:
+        if previous_template is None:
             # First line
             output_lines.append(original_line)
-            previous_cluster_id = cluster_id
+            previous_template = sanitized
             continue
 
-        if cluster_id == previous_cluster_id:
+        if sanitized == previous_template:
             repeat_count += 1
         else:
             if repeat_count > 1:
                 output_lines.append(f"  (repeated {repeat_count} times)")
             output_lines.append(original_line)
             repeat_count = 1
-            previous_cluster_id = cluster_id
+            previous_template = sanitized
 
-    if previous_cluster_id is not None and repeat_count > 1:
+    if previous_template is not None and repeat_count > 1:
         output_lines.append(f"  (repeated {repeat_count} times)")
 
     return "\n".join(output_lines)

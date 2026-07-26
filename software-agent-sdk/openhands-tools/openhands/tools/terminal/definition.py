@@ -264,6 +264,7 @@ class TerminalTool(ToolDefinition[TerminalAction, TerminalObservation]):
         conv_state: "ConversationState",
         username: str | None = None,
         no_change_timeout_seconds: int | None = None,
+        max_command_timeout_seconds: float | None = None,
         terminal_type: Literal["tmux", "subprocess"] | None = None,
         shell_path: str | None = None,
         executor: ToolExecutor | None = None,
@@ -276,6 +277,10 @@ class TerminalTool(ToolDefinition[TerminalAction, TerminalObservation]):
                          conv_state.workspace
             username: Optional username for the bash session
             no_change_timeout_seconds: Timeout for no output change
+            max_command_timeout_seconds: Optional harness-enforced upper bound for
+                         every non-interactive shell command. Commands without an
+                         explicit timeout receive this timeout, and larger requested
+                         values are clamped to it.
             terminal_type: Force a specific session type:
                          ('tmux', 'subprocess').
                          If None, auto-detect based on system capabilities:
@@ -297,6 +302,7 @@ class TerminalTool(ToolDefinition[TerminalAction, TerminalObservation]):
                 working_dir=working_dir,
                 username=username,
                 no_change_timeout_seconds=no_change_timeout_seconds,
+                max_command_timeout_seconds=max_command_timeout_seconds,
                 terminal_type=terminal_type,
                 shell_path=shell_path,
                 full_output_save_dir=conv_state.env_observation_persistence_dir,

@@ -11,11 +11,13 @@ from openhands.workspace import DockerDevWorkspace, DockerWorkspace
 
 import core.patches  
 from config import WorkflowConfig
+from core.bedrock import prepare_bedrock_container_auth
 from core.manager import Manager
 from core.subagent import SubAgentRunner, run_subagents_parallel
 from core.utils import (
     OutputLogger,
     TeeLogger,
+    apply_code_dev_prompt_guard,
     build_llm_kwargs,
     build_task_module,
     build_output_dir,
@@ -74,6 +76,21 @@ async def run_workflow_inner(task, workflow_config, task_module, multi_agent=Tru
     cleanup_stale_containers(verbose=True)
 
     workspace_config = task_module.get_workspace_config()
+    forward_env = [
+        "MS_ENABLE", "MS_WORKSPACE",
+        "LLM_API_KEY", "LLM_BASE_URL",
+    ]
+    volumes = list(workspace_config.get("volumes", []))
+
+    agent_models = [workflow_config.model, workflow_config.subagent_model]
+    if any(model and model.startswith("bedrock/") for model in agent_models):
+        aws_forward_env, aws_volumes = prepare_bedrock_container_auth()
+        forward_env.extend(aws_forward_env)
+        volumes.extend(aws_volumes)
+        if aws_volumes:
+            print("[Setup] AWS credentials: read-only shared credentials mount")
+        else:
+            print("[Setup] AWS credentials: container credential provider chain")
 
     sdk_source_dir = os.getenv(
         "SDK_SOURCE_DIR",
@@ -103,10 +120,8 @@ async def run_workflow_inner(task, workflow_config, task_module, multi_agent=Tru
             host_port=None,
             platform="linux/amd64",
             detach_logs=False,
-            forward_env=[
-                "MS_ENABLE", "MS_WORKSPACE",
-                "LLM_API_KEY", "LLM_BASE_URL",
-            ],
+            forward_env=forward_env,
+            volumes=volumes,
             enable_gpu=enable_gpu,
             gpu_device=gpu_device,
             keep_alive=keep_alive,
@@ -117,10 +132,8 @@ async def run_workflow_inner(task, workflow_config, task_module, multi_agent=Tru
             host_port=None,
             platform=detect_platform(),
             detach_logs=False,
-            forward_env=[
-                "MS_ENABLE", "MS_WORKSPACE",
-                "LLM_API_KEY", "LLM_BASE_URL",
-            ],
+            forward_env=forward_env,
+            volumes=volumes,
             enable_gpu=enable_gpu,
             gpu_device=gpu_device,
             keep_alive=keep_alive,
@@ -129,6 +142,18 @@ async def run_workflow_inner(task, workflow_config, task_module, multi_agent=Tru
     os.chdir(original_cwd)
 
     prompts = load_prompts(task)
+    code_dev_enabled = (
+        task == "paperbench"
+        and bool(getattr(task_module.config, "code_dev", False))
+    )
+    prompts = apply_code_dev_prompt_guard(prompts, enabled=code_dev_enabled)
+    if code_dev_enabled:
+        agent_command_timeout = task_module.config.agent_command_timeout
+        print(
+            "[PaperBench] code_dev mode: manager and subagents are restricted "
+            "to implementation and short verification; terminal commands are "
+            f"hard-limited to {agent_command_timeout}s"
+        )
 
     subagents = []
     subagent_results = []

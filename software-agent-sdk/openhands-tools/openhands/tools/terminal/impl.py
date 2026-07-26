@@ -41,6 +41,7 @@ class TerminalExecutor(ToolExecutor[TerminalAction, TerminalObservation]):
         working_dir: str,
         username: str | None = None,
         no_change_timeout_seconds: int | None = None,
+        max_command_timeout_seconds: float | None = None,
         terminal_type: Literal["tmux", "subprocess"] | None = None,
         shell_path: str | None = None,
         full_output_save_dir: str | None = None,
@@ -52,6 +53,8 @@ class TerminalExecutor(ToolExecutor[TerminalAction, TerminalObservation]):
             working_dir: Working directory for bash commands
             username: Optional username for the bash session
             no_change_timeout_seconds: Timeout for no output change
+            max_command_timeout_seconds: Optional harness-enforced upper bound for
+                                         non-interactive shell commands
             terminal_type: Force a specific session type:
                          ('tmux', 'subprocess').
                          If None, auto-detect based on system capabilities
@@ -65,6 +68,12 @@ class TerminalExecutor(ToolExecutor[TerminalAction, TerminalObservation]):
         self._working_dir = working_dir
         self._username = username
         self._no_change_timeout_seconds = no_change_timeout_seconds
+        if (
+            max_command_timeout_seconds is not None
+            and max_command_timeout_seconds <= 0
+        ):
+            raise ValueError("max_command_timeout_seconds must be greater than zero")
+        self._max_command_timeout_seconds = max_command_timeout_seconds
         self._terminal_type = terminal_type
         self.full_output_save_dir: str | None = full_output_save_dir
 
@@ -315,6 +324,47 @@ class TerminalExecutor(ToolExecutor[TerminalAction, TerminalObservation]):
     # Execution paths
     # ------------------------------------------------------------------
 
+    def _apply_command_timeout_cap(self, action: TerminalAction) -> TerminalAction:
+        """Apply the harness timeout to a newly launched shell command."""
+        cap = self._max_command_timeout_seconds
+        if (
+            cap is None
+            or action.is_input
+            or not action.command.strip()
+        ):
+            return action
+
+        requested = action.timeout
+        effective = cap if requested is None else min(requested, cap)
+        if effective == requested:
+            return action
+        return action.model_copy(update={"timeout": effective})
+
+    def _forced_timeout_observation(
+        self,
+        observation: TerminalObservation,
+        timeout_seconds: float,
+    ) -> TerminalObservation:
+        """Report that the harness killed a command at its hard time limit."""
+        metadata = observation.metadata.model_copy(
+            update={
+                "exit_code": 124,
+                "suffix": (
+                    f"\n[Command terminated by the harness after "
+                    f"{timeout_seconds:g} seconds; "
+                    "the terminal session was reset.]"
+                ),
+            }
+        )
+        return observation.model_copy(
+            update={
+                "exit_code": 124,
+                "timeout": True,
+                "is_error": True,
+                "metadata": metadata,
+            }
+        )
+
     def _execute_single_session(
         self,
         action: TerminalAction,
@@ -350,6 +400,17 @@ class TerminalExecutor(ToolExecutor[TerminalAction, TerminalObservation]):
         else:
             self._export_envs(action, conversation, session=self.session)
             observation = self.session.execute(action)
+
+        if (
+            self._max_command_timeout_seconds is not None
+            and self.session.prev_status is TerminalCommandStatus.HARD_TIMEOUT
+        ):
+            assert action.timeout is not None
+            observation = self._forced_timeout_observation(
+                observation,
+                action.timeout,
+            )
+            self._reset_single_session()
 
         return self._mask_observation(observation, conversation)
 
@@ -397,6 +458,18 @@ class TerminalExecutor(ToolExecutor[TerminalAction, TerminalObservation]):
             self._export_envs(cmd_action, conversation, session=session)
             observation = session.execute(cmd_action)
 
+            if (
+                self._max_command_timeout_seconds is not None
+                and session.prev_status is TerminalCommandStatus.HARD_TIMEOUT
+            ):
+                assert cmd_action.timeout is not None
+                observation = self._forced_timeout_observation(
+                    observation,
+                    cmd_action.timeout,
+                )
+                self._discard_session(handle.terminal)
+                handle.terminal = self._pool.replace(handle.terminal)  # type: ignore[union-attr]
+
             if reset_text is not None:
                 observation = observation.model_copy(
                     update={
@@ -417,6 +490,7 @@ class TerminalExecutor(ToolExecutor[TerminalAction, TerminalObservation]):
         if action.reset and action.is_input:
             raise ValueError("Cannot use reset=True with is_input=True")
 
+        action = self._apply_command_timeout_cap(action)
         if self._pool is not None:
             return self._execute_pooled(action, conversation)
         else:

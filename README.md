@@ -50,12 +50,15 @@ cd ../STORM
 ### Environment Variables
 
 ```bash
-# Agent API (DashScope or OpenRouter)
-export LLM_API_KEY=<your-api-key>
-export LLM_BASE_URL=https://openrouter.ai/api/v1   # or https://dashscope.aliyuncs.com/compatible-mode/v1
-
-# Judge API (OpenRouter, for PaperBench evaluation)
-export OPENROUTER_API_KEY=<your-openrouter-key>
+# Native AWS Bedrock for the agents and Bedrock Mantle for the judge
+export AWS_REGION_NAME=us-west-2
+export AWS_ACCESS_KEY_ID=<your-access-key>
+export AWS_SECRET_ACCESS_KEY=<your-secret-key>
+# export AWS_SESSION_TOKEN=<your-session-token>    # temporary credentials only
+export LLM_MODEL=bedrock/us.anthropic.claude-sonnet-4-6
+export JUDGE_MODEL=bedrock-mantle/openai.gpt-5.5
+export BEDROCK_MANTLE_REGION=us-east-1
+export BEDROCK_JUDGE_MAX_CONCURRENCY=4
 
 # SDK path
 export SDK_SOURCE_DIR=<path-to>/software-agent-sdk
@@ -104,7 +107,7 @@ bash scripts/run_single.sh
 ### Multi-Agent (STORM)
 
 ```bash
-bash scripts/run_multi.sh
+PAPER_ID=rice RUN_ID=sonnet46-rice-storm-r1 bash scripts/run_multi.sh
 ```
 
 ### Batch Run (all papers/repos in parallel)

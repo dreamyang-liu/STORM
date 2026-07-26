@@ -6,23 +6,24 @@
 export LLM_API_KEY="${LLM_API_KEY:-}"
 export LLM_BASE_URL="${LLM_BASE_URL:-https://openrouter.ai/api/v1}"
 export OPENROUTER_API_KEY="${OPENROUTER_API_KEY:-$LLM_API_KEY}"
-export SDK_SOURCE_DIR="${SDK_SOURCE_DIR:-$(cd "$(dirname "$0")/.." && pwd)/software-agent-sdk}"
+export SDK_SOURCE_DIR="${SDK_SOURCE_DIR:-$(cd "$(dirname "$0")/../.." && pwd)/software-agent-sdk}"
 
 # ===================== Configuration =====================
-task="commit0"           # "commit0" or "paperbench"
-model="openai/deepseek-v4-pro"
+task="${STORM_TASK:-paperbench}"           # "commit0" or "paperbench"
+model="${LLM_MODEL:-bedrock/us.anthropic.claude-sonnet-4-6}"
 max_parallel=4
 
 # STORM settings
 max_iterations=50
-max_subagents=4
+max_subagents=2
 sub_iterations=80
 rounds_of_chat=2
 
 # PaperBench settings
-judge_model="openrouter/anthropic/claude-sonnet-4-6"
+judge_model="${JUDGE_MODEL:-bedrock-mantle/openai.gpt-5.5}"
 test_max_depth=999
-test_reproduce_timeout=3600
+test_reproduce_timeout="${TEST_REPRODUCE_TIMEOUT:-300}"
+agent_command_timeout="${PAPERBENCH_AGENT_COMMAND_TIMEOUT:-300}"
 code_dev=true
 
 # ===================== Paper/Repo Lists =====================
@@ -42,6 +43,9 @@ paperbench_papers=(
     "robust-clip"
     "sample-specific-masks"
     "sapg"
+    "self-composing-policies"
+    "self-expansion"
+    "semantic-self-consistency"
     "sequential-neural-score-estimation"
     "stay-on-topic-with-classifier-free-guidance"
     "stochastic-interpolants"
@@ -83,6 +87,7 @@ run_paperbench() {
         --multi_agent \
         --test_max_depth "$test_max_depth" \
         --test_reproduce_timeout "$test_reproduce_timeout" \
+        --agent_command_timeout "$agent_command_timeout" \
         --judge_type simple \
         --judge_model "$judge_model" \
         $([ "$code_dev" = "true" ] && echo "--code_dev" || echo "--nocode_dev")

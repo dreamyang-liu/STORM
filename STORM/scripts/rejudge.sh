@@ -6,11 +6,8 @@
 #   bash scripts/rejudge.sh outputs/paperbench/deepseek-v4-pro rice pinn
 #   bash scripts/rejudge.sh outputs/paperbench/deepseek-v4-pro  # all papers
 
-# ===================== API Configuration =====================
-export OPENROUTER_API_KEY="${OPENROUTER_API_KEY:-$LLM_API_KEY}"
-
 # ===================== Configuration =====================
-judge_model="openrouter/anthropic/claude-sonnet-4-6"
+judge_model="${JUDGE_MODEL:-bedrock-mantle/openai.gpt-5.5}"
 max_parallel=4
 params="multi-agent/manageriters=50_subagents=2_subiters=80_rchats=2_codedev=true"
 
