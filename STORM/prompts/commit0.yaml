@@ -87,7 +87,7 @@ task_delegation: |
     ```
     2. Suspending your exploration, delegate the implementation work with a systematic approach to engineers by outputting the delegation JSON based on your current exploration of the repository structure and the dependencies. You have up to {max_agents} engineers available. Based on your scan sizing assessment, the recommended number of engineers is {recommended_agents} — use this as your target unless you have a strong reason to adjust. Using too many engineers on a small codebase wastes coordination overhead; using too few on a large codebase leaves capacity on the table.
 
-  IMPORTANT: All engineers share the same workspace directory `/workspace/`. There is NO file isolation between engineers. When assigning tasks, you MUST clearly specify non-overlapping file assignments to avoid conflicts. Each engineer should only modify their assigned files. Engineers annotate their code with `# engineer_N: <intent>` comments to mark ownership of blocks they write.
+  IMPORTANT: All engineers share the same workspace directory `/workspace/`. There is NO file isolation between engineers. When assigning tasks, you MUST clearly specify non-overlapping file assignments to avoid conflicts. Each engineer should only modify their assigned files.
 
   CRITICAL — Full utilization rule: You MUST assign at least one task in the first round to EVERY engineer up to num_agents. If you set num_agents to N, the "tasks" array MUST contain exactly N entries, one per engineer (engineer_1 through engineer_N). Do NOT leave any engineer idle in the first round. If there are fewer independent files than engineers, split large files by assigning non-overlapping sets of functions within the same file to different engineers.
 
@@ -197,8 +197,6 @@ subagent_prompt: |
 
   SCOPE DISCIPLINE: You are ONLY responsible for implementing the functions listed below. If you see test failures caused by functions in OTHER files or functions NOT assigned to you, DO NOT attempt to fix them — those are another engineer's responsibility. Do not touch, work around, or investigate code outside your assignment. Report the failure to your manager and move on.
 
-  Multi-agent coordination: Every edit you make MUST include a one-line comment in the form `# {engineer_id}: <short intent>` IMMEDIATELY above the block you added or changed — this is how other agents know the block is yours. If you see `# <other-engineer-id>: ...` comments, preserve both the comment and the block below it unless your task explicitly requires changing them. Use `#` for Python, `//` for JS/Go/Java. One comment per logical change.
-
   Here is your task assigned by the manager:
   {instruction}
   You are assigned to implement the following functions in the file: {file_path}: {functions}
@@ -271,6 +269,6 @@ manager_final_review_all: |
 
   1. Check if all engineers' work has been committed. If an engineer didn't submit a commit, inspect the workspace for any uncommitted but useful implementation and commit it on their behalf.
   2. Check if the code contains any infinite loops, missing exception handling, `input()` calls, or other issues that will cause the code to hang or crash during testing. If you find any hanging issues, fix or revert the problematic code.
-  3. Verify the integration quality. Since different engineers developed their code independently (look for `# engineer_N: <intent>` annotations to understand each block's purpose), check that import paths and class/function names are consistent across files. If you find integration issues (e.g., a file imports a class name that another engineer named differently), fix those mismatches.
+  3. Verify the integration quality. Since different engineers developed their code independently, check that import paths and class/function names are consistent across files. If you find integration issues (e.g., a file imports a class name that another engineer named differently), fix those mismatches.
   4. Check for any remaining `pass` statements in the assigned files. If you find any, implement them or flag them.
   5. Stop once you have finished the review. DO NOT implement any new code by yourself, re-list files, re-check git status, or print summaries. Remember your runtime will also be graded.

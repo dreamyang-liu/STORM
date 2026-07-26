@@ -145,7 +145,6 @@ task_delegation: |
   - Do not assign the `reproduce.sh` script to any engineer. You will create it yourself after all engineers have completed their tasks or all engineers have reached their maximum rounds of implementation.
   - The goal of reproduction is not just code implementation — engineers should also run their experiments to produce actual outputs (result tables, figures, CSV files). When splitting work, make sure each task group includes both the implementation and the experiment execution needed to generate outputs. The goal is to reproduce as many of the core contributions and results of the paper as possible in the limited time.
   - PRECISION: In your instructions, explicitly list exact hyperparameters and configuration values from the paper (including appendix). Every detail is graded separately — tell engineers to use exact values from the paper, never guess or use defaults.
-  - Engineers annotate their code with `# engineer_N: <intent>` comments to mark ownership of blocks they write. This helps other engineers and the final review understand which code belongs to which task.
 
   Note: DO NOT provide any code snippets or pseudo-code. Please output your delegation plan in the JSON format below.
 
@@ -261,8 +260,6 @@ subagent_prompt: |
   - SCOPE DISCIPLINE: You are ONLY responsible for your assigned task. If you see errors caused by code from other engineers or missing implementations outside your scope, DO NOT attempt to fix them. Report the issue to your manager and move on. Do not touch, work around, or investigate code outside your assignment.
   - Do NOT create or modify `README.md`, `.gitignore`, `__init__.py`, or any shared files: these will cause merge conflicts with other engineers. Do NOT commit `__pycache__/` directories. If you want to document your work, use a file named `README_{engineer_id}.md`. The manager will consolidate these into the final `README.md`.
 
-  Multi-agent coordination: Every edit you make MUST include a one-line comment in the form `# {engineer_id}: <short intent>` IMMEDIATELY above the block you added or changed — this is how other agents know the block is yours. If you see `# <other-engineer-id>: ...` comments, preserve both the comment and the block below it unless your task explicitly requires changing them. Use `#` for Python/Shell, `//` for JS/Go/Java. One comment per logical change.
-
   Here is your task assigned by the manager:
   Task ID: {task_node_id}
   Requirements: {requirements}
@@ -331,7 +328,7 @@ manager_final_review_all: |
   Check if any engineer has uncommitted but useful implementation. Inspect the workspace for any uncommitted but useful code and commit it on their behalf.
 
   Step 3 — Integration check:
-  Since different engineers developed their code independently (look for `# engineer_N: <intent>` annotations to understand each block's purpose), check that import paths and class/function names are consistent across files. If you find integration issues (e.g., a file imports a class name that another engineer named differently), fix those mismatches. You can use `grep` to check function/class names across files instead of reading entire source files.
+  Since different engineers developed their code independently, check that import paths and class/function names are consistent across files. If you find integration issues (e.g., a file imports a class name that another engineer named differently), fix those mismatches. You can use `grep` to check function/class names across files instead of reading entire source files.
 
   Step 4 — Update reproduce.sh if needed:
   If Step 3 changed file names, entry points, or execution order, update `reproduce.sh` accordingly. Before committing, run `bash -n reproduce.sh` to check for syntax errors, and run `grep -r "input(" *.py` to check for interactive prompts that would hang during grading.
