@@ -13,6 +13,9 @@
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
   onload="renderMathInElement(document.body,{delimiters:[{left:'\\[',right:'\\]',display:true},{left:'\\(',right:'\\)',display:false}]})"></script>
 <link rel="icon" type="image/svg+xml" href="static/logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="static/css/style.css">
 </head>
 <body>
@@ -21,7 +24,7 @@
     <a class="brand" href="#"><img src="static/logo.svg" alt="">STORM</a>
     <div class="links">
       <a href="#method">Method</a><a href="#results">Results</a><a href="#explorer-sec">Per-task</a>
-      <a href="#ablations">Ablations</a><a href="#analysis">Analysis</a><a href="#limits">Limitations</a><a href="#bibtex">BibTeX</a>
+      <a href="#baselines">Baselines</a><a href="#analysis">Analysis</a><a href="#bibtex">BibTeX</a>
     </div>
   </div>
 </nav>
@@ -47,11 +50,11 @@
   <div class="buttons">
     <a class="btn" href="https://arxiv.org/abs/2605.20563">
       <svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z M14 3v5h5" /></svg>arXiv</a>
-    <a class="btn" href="https://arxiv.org/pdf/2605.20563">
+    <a class="btn ghost" href="https://arxiv.org/pdf/2605.20563">
       <svg viewBox="0 0 24 24"><path d="M12 16l-5-5h3V4h4v7h3zM5 18h14v2H5z"/></svg>PDF</a>
-    <a class="btn" href="https://github.com/dreamyang-liu/STORM">
+    <a class="btn ghost" href="https://github.com/dreamyang-liu/STORM">
       <svg viewBox="0 0 24 24"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.3.8-.6v-2c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.8.8 1.2 1.9 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5z"/></svg>Code</a>
-    <a class="btn" href="#bibtex">
+    <a class="btn ghost" href="#bibtex">
       <svg viewBox="0 0 24 24"><path d="M5 3h11l3 3v15H5zM8 9h8v2H8zm0 4h8v2H8z"/></svg>BibTeX</a>
   </div>
 
@@ -66,24 +69,21 @@
 <main>
 
 <!-- Teaser -->
-<section class="wrap" id="overview">
-  <figure>
+<section class="wrap" id="overview" style="padding-top:8px">
+  <figure class="figure-card">
     <img src="static/figs/arch.png" alt="STORM architecture: a manager delegates tasks to parallel engineers who read and write a shared workspace through the STORM manager, which versions files, validates writes against each agent's read snapshot, and returns diffs and stale dependencies on failure.">
     <figcaption><b>Figure 1.</b> The manager scans the repository, delegates scoped tasks to parallel engineers, then reviews and commits their work.
       All engineers share one workspace. Every read and write goes through the STORM manager, which versions each file,
       checks a write against the agent's read snapshot, and on failure returns the current content, a diff, and the list of stale dependencies.</figcaption>
   </figure>
 
-  <div class="narrow">
-    <h2>Abstract</h2>
-    <p>Recent advances in multi-agent systems have shown great potential for solving complex tasks. However, when multiple agents edit a shared codebase concurrently, their changes can silently conflict and inconsistent views lead to integration failures. Existing multi-agent systems address this through workspace isolation (e.g., one git worktree per agent), but this defers conflict resolution to a post-hoc merge step where recovery is expensive. In this paper, we propose STORM, i.e., STate-ORiented Management for multi-agent collaboration. Specifically, STORM manages agent states by mediating their interactions with the shared workspace, ensuring that each agent operates on a consistent view of the codebase and that conflicting edits are detected and resolved at write time. We evaluate STORM on Commit0 and PaperBench across multiple LLMs. STORM outperforms the git-worktree-based multi-agent baseline by +18.7 on Commit0-Lite and +1.4 on PaperBench, while achieving comparable or better cost efficiency. Combined with single-agent runs, STORM reaches highest scores of 87.6 and 78.2 on the two benchmarks respectively, suggesting that explicit state management is a more effective foundation for multi-agent collaboration than workspace isolation. STORM can also be plugged into any multi-agent system.</p>
-  </div>
 </section>
 
 <!-- Problem -->
 <section class="wrap" id="problem">
   <div class="narrow">
-    <h2>Isolation defers conflicts. It doesn't remove them.</h2>
+    <div class="eyebrow">The problem</div>
+  <h2>Isolation defers conflicts. It doesn't remove them.</h2>
     <p>Most parallel coding-agent systems give each agent its own git worktree and merge at the end. That stops agents from
       overwriting each other while they work, but it also hides every agent's progress from every other agent. Agent A writes a helper
       that assumes a certain signature. Agent B changes that signature on its own branch. Each branch passes on its own, and the combined program breaks.
@@ -104,9 +104,10 @@
 </section>
 
 <!-- Method -->
-<section class="wrap" id="method">
+<section class="wrap alt" id="method">
   <div class="narrow">
-    <h2>Method</h2>
+    <div class="eyebrow">Method</div>
+  <h2>Method</h2>
     <p>An agent doesn't need a frozen snapshot of the whole repository to make a correct edit. It only needs the files it actually
       read to stay unchanged while it reasons. We call this <b>local state consistency</b>.</p>
 
@@ -174,6 +175,7 @@
 
 <!-- Results -->
 <section class="wrap" id="results">
+  <div class="eyebrow">Results</div>
   <h2>Results</h2>
   <p class="narrow" style="margin-left:0">On Commit0-Lite (16 Python repositories whose implementations have been stubbed out, scored by their own test suites),
     all multi-agent methods use the same manager–engineer workflow: the same models, prompts, budgets, four engineers, and the same review and reassignment loop.
@@ -256,10 +258,11 @@
 </section>
 
 <!-- Per-task explorer -->
-<section class="wrap" id="explorer-sec">
+<section class="wrap alt" id="explorer-sec">
+  <div class="eyebrow">Per-task results</div>
   <h2>Every repository and paper</h2>
   <p>Each row is one Commit0-Lite repository or PaperBench paper (single run each, from the paper's appendix).
-    Hover over a row to see the score, cost, and wall-clock time for each method. Switch to <i>Table</i> to sort by any column.</p>
+    Rows are listed alphabetically by default. Hover over a row to see the score, cost, and wall-clock time for each method. In <i>Table</i> view, click any column header to sort.</p>
   <div id="explorer" class="viz-root">
     <div class="controls"></div>
     <div class="legend">
@@ -273,28 +276,22 @@
   </div>
 </section>
 
-<!-- Ablations & baselines -->
-<section class="wrap" id="ablations">
-  <h2>What drives the gain</h2>
-  <div class="controls"></div>
-  <div class="twocol">
-    <div>
-      <h3>Component ablations</h3>
-      <p class="secondary" style="font-size:15.5px">All variants keep the same manager, four engineers, review loop, and iteration budgets.
-        With the manager workflow held fixed, removing write-time validation drops the score to GitWorktree level.</p>
-      <div class="chart"><svg id="abl-chart" role="img" aria-label="Ablation results"></svg></div>
-    </div>
-    <div>
-      <h3>Other coordination mechanisms</h3>
-      <p class="secondary" style="font-size:15.5px">We ported the coordination layers of a shared-memory system (MARBLE) and a CRDT system (CodeCRDT)
-        into the same harness, with the same model and budgets. CRDTs guarantee that text converges, not that the merged program is semantically correct.</p>
-      <div class="chart"><svg id="base-chart" role="img" aria-label="Coordination baselines"></svg></div>
-    </div>
+<!-- Coordination baselines -->
+<section class="wrap" id="baselines">
+  <div class="eyebrow">Baselines</div>
+  <h2>Other coordination mechanisms</h2>
+  <p class="narrow" style="margin-left:0">We ported the coordination layers of a shared-memory system (MARBLE) and a CRDT system (CodeCRDT)
+    into the same harness, with the same model, four engineers, and the same budgets (Commit0-Lite, Sonnet 4.6).
+    CRDTs guarantee that text converges, not that the merged program is semantically correct.</p>
+  <div class="viz-root">
+    <div class="controls"></div>
+    <div class="chart" style="max-width:860px"><svg id="base-chart" role="img" aria-label="Coordination baselines"></svg></div>
   </div>
 </section>
 
 <!-- Analysis -->
-<section class="wrap" id="analysis">
+<section class="wrap alt" id="analysis">
+  <div class="eyebrow">Analysis</div>
   <h2>Analysis</h2>
 
   <h3>Conflicts surface early, and the gap is widest on tightly coupled repositories</h3>
@@ -336,7 +333,7 @@
       <span><i style="background:#2a78d6"></i>Engineer work</span>
       <span><i style="background:#fff;outline:2px solid var(--text-primary);outline-offset:-2px"></i>Focus task</span>
       <span><i style="background:#008300;transform:rotate(45deg) scale(.85)"></i>Accepted review</span>
-      <span><i style="background:#e34948;transform:rotate(45deg) scale(.85)"></i>Rejected review</span>
+      <span><i style="background:#e34948;border-radius:50%"></i>Rejected review</span>
     </div>
     <div class="chart"><svg id="gantt-worktree" role="img" aria-label="GitWorktree timeline on jinja"></svg></div>
     <div class="chart" style="margin-top:14px"><svg id="gantt-storm" role="img" aria-label="STORM timeline on jinja"></svg></div>
@@ -366,62 +363,17 @@
       </div>
     </div>
     <p class="fig-note">Sonnet 4.6 on Commit0-Lite; the x-axis is the maximum number of engineers, and 1 is the single agent (blue).
-      Hovering over a column highlights the same setting in all three panels. Going from 2 to 8 engineers lifts the weighted score from 38.2% to 69.7%.
+      The small number under each score column is the average number of engineers the manager actually deployed. Hovering over a column highlights the same setting in all three panels. Going from 2 to 8 engineers lifts the weighted score from 38.2% to 69.7%.
       Cost grows roughly linearly, while wall-clock time per repository stays flat because engineers run in parallel.
       The manager deploys fewer engineers than allowed on simple repositories.</p>
-  </div>
-</section>
-
-<!-- Scope & limits -->
-<section class="wrap" id="limits">
-  <div class="narrow">
-    <h2>Scope and limitations</h2>
-    <ul class="lim">
-      <li><b>STORM is not a guarantee of semantic correctness.</b> It protects the files an agent has actually read. It can't detect dependencies the agent never
-        looked at, and it can't guarantee that task boundaries are right or that separately accepted edits compose. Most of the remaining failures happen after writes
-        have already passed the version check.</li>
-      <li><b>Decomposition isn't always worth it.</b> On small, self-contained repositories, a single agent is cheaper and sometimes better
-        (e.g., <code>chardet</code>). A practical deployment can run the single agent first and escalate to STORM only when the repository's tests show it's needed.</li>
-      <li><b>Only file edits are coordinated.</b> Writes made through the terminal (<code>sed</code>, <code>echo &gt;</code>, scripts) are detected afterwards but can't be rejected in advance,
-        and concurrent shell side effects aren't serialized.</li>
-      <li><b>Conflicts are tracked per file.</b> Two agents editing different functions in the same file trigger a false conflict, and heavily shared files such as
-        <code>__init__.py</code> become bottlenecks.</li>
-      <li><b>Intent annotations carry no formal guarantee.</b> They improve results on average, but they can also pass along incomplete or wrong reasoning.</li>
-      <li><b>The novelty is in the application, not a new concurrency primitive.</b> STORM applies optimistic concurrency control to per-agent context. The contribution is identifying
-        <em>which</em> state has to be validated, and <em>when</em>, for multi-agent software engineering, plus the empirical study behind it.</li>
-    </ul>
-
-    <h3>Questions we were asked</h3>
-    <details>
-      <summary>Are the "Combined" numbers an oracle?</summary>
-      <div><p>No. The single agent and the multi-agent system each produce a complete codebase. For each repository, we keep whichever codebase scores
-        higher on the repository's own test suite. Tests, files, and patches are never mixed between the two submissions. (The arXiv v1 text wrongly describes this as a
-        per-test union.) Selection costs two runs and needs a representative test suite, so we report it separately from the standalone methods.</p></div>
-    </details>
-    <details>
-      <summary>Is the GitWorktree baseline just a weak <code>git merge</code>?</summary>
-      <div><p>No. Its manager inspects and integrates the engineers' changes itself, tests the combined repository, and can repair or reassign failed work,
-        using the same prompts, budgets, and reassignment policy as STORM. The difference is when inconsistencies are exposed: after isolated work
-        has piled up, or at the moment of the stale write.</p></div>
-    </details>
-    <details>
-      <summary>Isn't the gain just more compute?</summary>
-      <div><p>A controlled study on the same benchmarks and framework (Geng &amp; Neubig, 2026) doubles the single agent's iteration budget from 100 to 200. That changes its score
-        by −1.2 to +5.8 points on Commit0-Lite, far less than the coordination gains. In our ablations, which hold the manager and compute fixed, removing write-time
-        validation alone costs 22.4 Score<sub>w</sub> points.</p></div>
-    </details>
-    <details>
-      <summary>Does rejecting stale writes stop scaling at some point?</summary>
-      <div><p>Not within the repository sizes in Commit0-Lite. STORM's lead over GitWorktree grows with source-file count, test count, and import density.
-        Acceptance rate does fall as agents are added (81.2% at 4 engineers, 67.1% at 8), and we can't rule out a regime where contention dominates at much larger scales.</p></div>
-    </details>
   </div>
 </section>
 
 <!-- BibTeX -->
 <section class="wrap" id="bibtex">
   <div class="narrow">
-    <h2>BibTeX</h2>
+    <div class="eyebrow">Cite</div>
+  <h2>BibTeX</h2>
     <div class="bib">
       <button class="copy" id="copy-bib">Copy</button>
 <pre class="code" id="bib-text">@inproceedings{liu2026storm,
@@ -440,7 +392,7 @@
 </main>
 
 <footer>
-  STORM is built on the <a href="https://docs.openhands.dev/sdk">OpenHands SDK</a> and evaluated on
+  <img src="static/logo.svg" alt="">  STORM is built on the <a href="https://docs.openhands.dev/sdk">OpenHands SDK</a> and evaluated on
   <a href="https://commit-0.github.io/">Commit0</a> and <a href="https://arxiv.org/abs/2504.01848">PaperBench</a>.
 </footer>
 

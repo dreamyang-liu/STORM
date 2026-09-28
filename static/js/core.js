@@ -152,16 +152,20 @@
   // opts: {categories:[label], series:[{key,name,color}], value(catIndex, key), yMax, ticks, fmt, tipHtml(ci)}
   function groupedBars(svg, opts) {
     svg.innerHTML = "";
-    const W = opts.width || 300, H = opts.height || 210, L = 34, R = 6, T = 22, B = opts.bottom || 30;
+    // Headroom above the top tick keeps value labels clear of the panel edge.
+    const sub = opts.subLabel || opts.reserveSub;
+    const W = opts.width || 300, T = 14, L = 34, R = 6, B = sub ? 50 : 32;
+    const H = (opts.height || 220) + (sub ? 18 : 0);
     svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-    const plotW = W - L - R, plotH = H - T - B;
-    const y = v => T + plotH - (v / opts.yMax) * plotH;
+    const plotW = W - L - R, plotH = H - T - B, top = opts.yMax * 1.15;
+    const y = v => T + plotH - (v / top) * plotH;
 
     opts.ticks.forEach(t => {
       el("line", { x1: L, x2: W - R, y1: y(t), y2: y(t), stroke: "var(--line)", "stroke-width": 1 }, svg);
-      text(svg, L - 6, y(t) + 4, t, { "text-anchor": "end", "font-size": 11 });
+      text(svg, L - 8, y(t) + 4, t, { "text-anchor": "end", "font-size": 11 });
     });
 
+    el("line", { x1: L, x2: W - R, y1: y(0), y2: y(0), stroke: "var(--line-strong)", "stroke-width": 1 }, svg);
     const nC = opts.categories.length, nS = opts.series.length;
     const band = plotW / nC, barW = Math.min(opts.barW || 22, (band - 16) / nS - 2);
     const groups = [];
@@ -180,9 +184,9 @@
             { "text-anchor": "middle", "font-size": 11, "font-weight": 600, fill: "var(--text-primary)" });
         }
       });
-      text(svg, cx, H - B + 17, cat, { "text-anchor": "middle", "font-size": 12, fill: "var(--text-secondary)" });
-      if (opts.subLabel) text(svg, cx, H - B + 30, opts.subLabel(ci), { "text-anchor": "middle", "font-size": 11 });
-      const hit = el("rect", { x: cx - band / 2 + 2, y: T - 10, width: band - 4, height: plotH + 10, fill: "transparent" }, svg);
+      text(svg, cx, H - B + 20, cat, { "text-anchor": "middle", "font-size": 12, "font-weight": 500, fill: "var(--text-secondary)" });
+      if (opts.subLabel) text(svg, cx, H - B + 37, opts.subLabel(ci), { "text-anchor": "middle", "font-size": 11 });
+      const hit = el("rect", { x: cx - band / 2 + 2, y: T, width: band - 4, height: H - T, fill: "transparent" }, svg);
       hover(hit, () => opts.tipHtml(ci),
         () => { svg.classList.add("dim"); g.classList.add("hot"); if (opts.onHover) opts.onHover(ci); },
         () => { svg.classList.remove("dim"); g.classList.remove("hot"); if (opts.onHover) opts.onHover(null); });
@@ -199,7 +203,7 @@
   // rows: [{label, value, color, note}], max, fmt
   function hbarList(svg, { rows, max, fmt, tipHtml }) {
     svg.innerHTML = "";
-    const rowH = 34, L = 214, R = 44, W = 480, H = rows.length * rowH + 8;
+    const rowH = 38, L = 250, R = 60, W = 760, H = rows.length * rowH + 8;
     svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
     const x = v => (v / max) * (W - L - R);
     rows.forEach((r, i) => {
