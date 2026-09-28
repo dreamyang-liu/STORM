@@ -42,7 +42,7 @@
       run: async (S, A) => {
         S.mgr.msg = "Delegating scoped tasks"; S.delegated = true;
         ENGS.forEach(e => { S.engs[e.id].task = e.file; S.engs[e.id].status = "task assigned"; });
-        A.render(); await A.pause(700);
+        A.render(); await A.pause(1200);
         S.mgr.msg = "Waiting for engineers";
       } },
     { title: "Read", text: "Every read goes through STORM, which records the file and version in the engineer's <b>read snapshot</b>. Engineer 2 also reads <code>utils.py</code>, because <code>core.py</code> depends on it.",
@@ -206,7 +206,7 @@
         const path = el("path", { d, fill: "none", stroke: color, "stroke-width": 2, opacity: 0.18, "stroke-linecap": "round" }, R.packets);
         const halo = el("circle", { r: 10, fill: color, opacity: 0.35, filter: "url(#fw-glow)" }, R.packets);
         const dot = el("circle", { r: 6, fill: color, stroke: "#fff", "stroke-width": 2 }, R.packets);
-        const len = path.getTotalLength(), dur = Math.max(450, len / 0.6);
+        const len = path.getTotalLength(), dur = Math.max(800, len / 0.3);
         return new Promise(resolve => {
           const t0 = performance.now();
           const frame = now => {
@@ -238,7 +238,7 @@
           const fail = opt.failStage === i;
           S.storm.stages = S.storm.stages.map((v, j) => (j < i ? "pass" : j === i ? (fail ? "fail" : "pass") : null));
           S.storm.msg = `${eid} → ${f.name}: checking ${STAGES[i].toLowerCase()}…`; S.storm.kind = null;
-          A.render(); await A.pause(260);
+          A.render(); await A.pause(450);
           if (fail) break;
         }
         if (opt.failStage != null) {
@@ -249,7 +249,7 @@
           S.engs[eid].status = `✗ rejected · stale ${st.name}`; S.engs[eid].kind = "bad";
           A.render();
           await A.travel([[e.x + 20, Y.bandMid], [e.x + 20, Y.engBot]], C.reject);
-          await A.pause(400);
+          await A.pause(900);
           return;
         }
         S.storm.msg = `✓ ${eid} → ${f.name}: snapshot current, write accepted`; S.storm.kind = "ok";
@@ -317,7 +317,9 @@
       while (ctl.playing && ctl.step < STEPS.length - 1) {
         const ok = await animateStep(ctl.step + 1);
         if (!ok || !ctl.playing) break;
-        await new Promise(r => setTimeout(r, reduceMotion ? 1800 : 1100));
+        // Linger long enough to read the caption (~4 words/s), within 2.5–4.5 s.
+        const words = STEPS[ctl.step].text.replace(/<[^>]+>/g, "").split(/\s+/).length;
+        await new Promise(r => setTimeout(r, Math.min(4500, Math.max(2500, words * 250))));
       }
       stop();
     }
