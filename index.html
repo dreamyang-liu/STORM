@@ -7,7 +7,7 @@
 <meta name="description" content="STORM replaces workspace isolation with write-time state validation so parallel coding agents catch stale assumptions before they merge. NeurIPS 2026.">
 <meta property="og:title" content="STORM: Multi-agent Collaboration with State Management">
 <meta property="og:description" content="Parallel coding agents share one workspace; a write is accepted only if every file the agent read is still current. NeurIPS 2026.">
-<meta property="og:image" content="static/figs/arch.png">
+<meta property="og:image" content="https://dreamyang-liu.github.io/STORM/static/og.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
@@ -70,13 +70,30 @@
 
 <!-- Teaser -->
 <section class="wrap" id="overview" style="padding-top:8px">
-  <figure class="figure-card">
-    <img src="static/figs/arch.png" alt="STORM architecture: a manager delegates tasks to parallel engineers who read and write a shared workspace through the STORM manager, which versions files, validates writes against each agent's read snapshot, and returns diffs and stale dependencies on failure.">
-    <figcaption><b>Figure 1.</b> The manager scans the repository, delegates scoped tasks to parallel engineers, then reviews and commits their work.
-      All engineers share one workspace. Every read and write goes through the STORM manager, which versions each file,
-      checks a write against the agent's read snapshot, and on failure returns the current content, a diff, and the list of stale dependencies.</figcaption>
-  </figure>
-
+  <div class="viz-root fw" id="framework">
+    <div class="fw-head">
+      <div>
+        <div class="viz-title">How STORM coordinates parallel engineers</div>
+        <div class="viz-sub">An illustrative episode, step by step. Hover over any component for details.</div>
+      </div>
+      <div class="fw-ctl">
+        <button type="button" class="fw-btn" data-act="prev" aria-label="Previous step">‹</button>
+        <button type="button" class="fw-btn primary" data-act="play">▶ Play</button>
+        <button type="button" class="fw-btn" data-act="next" aria-label="Next step">›</button>
+      </div>
+    </div>
+    <div class="fw-dots" role="group" aria-label="Steps"></div>
+    <div class="fw-body">
+      <div class="chart"><svg role="img" aria-label="STORM framework: a manager delegates to engineers who read and write a shared workspace through the STORM layer, which validates each write against the engineer's read snapshot."></svg></div>
+      <div class="fw-caption" aria-live="polite"></div>
+    </div>
+    <div class="legend fw-legend">
+      <span><i style="background:#2a78d6;border-radius:50%"></i>Read</span>
+      <span><i style="background:#1baf7a;border-radius:50%"></i>Write</span>
+      <span><i style="background:#e34948;border-radius:50%"></i>Rejection (current content + diff + stale list)</span>
+      <span class="muted" style="margin-left:auto">Illustrative scenario, not run data.</span>
+    </div>
+  </div>
 </section>
 
 <!-- Problem -->
@@ -399,6 +416,7 @@
 <script src="static/js/data.js"></script>
 <script src="static/js/core.js"></script>
 <script src="static/js/figures.js"></script>
+<script src="static/js/framework.js"></script>
 <script>
 document.getElementById("copy-bib").addEventListener("click", e => {
   navigator.clipboard.writeText(document.getElementById("bib-text").textContent).then(() => {
