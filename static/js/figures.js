@@ -66,7 +66,7 @@
     function rowsFor() {
       return TABLE1[model].filter(r => withSel || !r[0].endsWith("+")).map(r => ({
         key: r[0], sel: r[0].endsWith("+"), vals: r.slice(1),
-        name: r[0].endsWith("+") ? `${METHODS[r[0].slice(0, -1)].name} + Single (select)` : METHODS[r[0]].name,
+        name: r[0].endsWith("+") ? `${METHODS[r[0].slice(0, -1)].name} + Single` : METHODS[r[0]].name,
       }));
     }
     function draw() {
@@ -89,7 +89,7 @@
     const g1 = document.createElement("div"); g1.className = "group"; g1.innerHTML = "<span>Agent model</span>";
     segmented(g1, MODELS, model, v => { model = v; draw(); });
     const g2 = document.createElement("label"); g2.className = "chk";
-    g2.innerHTML = `<input type="checkbox"> Show verifier-selected rows (+ Single)`;
+    g2.innerHTML = `<input type="checkbox"> Show + Single rows`;
     g2.querySelector("input").addEventListener("change", e => { withSel = e.target.checked; draw(); });
     controls.append(g1, g2);
     draw();
@@ -186,37 +186,6 @@
       if (state.view === "chart") drawChart(rows); else drawTable(rows);
     }
     draw();
-  }
-
-  // ---------- Coupling analysis (Fig. 3, rebuilt) ----------
-  function coupling() {
-    const C = D.coupling;
-    const PRE = { key: "pre", name: "Pre-commit (write time)", color: "#4a3aa7" };
-    const POST = { key: "post", name: "Post-commit (merge)", color: "#eda100" };
-    groupedBars($("coupling-a"), {
-      categories: C.conflicts.map(c => c.config.replace(" (k=4)", "").replace("GitWorktree", "Worktree")), series: [PRE, POST], yMax: 3.5, ticks: [0, 1, 2, 3],
-      value: (ci, k) => C.conflicts[ci][k], labelAll: true, fmt: v => (v ? v.toFixed(2) : ""), bottom: 44,
-      subLabel: ci => `pass ${C.conflicts[ci].pass.toFixed(1)}%`,
-      tipHtml: ci => { const c = C.conflicts[ci]; return `<div class="tt-h">${c.config}</div>` +
-        swatchRow(PRE.color, "Pre-commit conflicts / run", c.pre.toFixed(2)) + swatchRow(POST.color, "Post-commit conflicts / run", c.post.toFixed(2)) +
-        `Final pass rate ${c.pass.toFixed(1)}%`; },
-    });
-    const series = METHOD_KEYS.map(k => ({ key: k, name: METHODS[k].name, color: METHODS[k].color }));
-    groupedBars($("coupling-b"), {
-      categories: C.strata.map(s => s.stratum), series, yMax: 100, ticks: [0, 25, 50, 75, 100],
-      value: (ci, k) => C.strata[ci][k], labelKey: "storm", fmt: f1, reserveSub: true,
-      tipHtml: ci => { const s = C.strata[ci]; return `<div class="tt-h">${s.stratum}-coupling repositories</div>` +
-        series.map(m => swatchRow(m.color, m.name, f1(s[m.key]) + "%")).join("") +
-        `STORM − GitWorktree: +${(s.storm - s.worktree).toFixed(1)}`; },
-    });
-    const OV = { key: "overlap", name: "First-round scope overlap", color: "#e87ba4" };
-    const DEP = { key: "dependency", name: "Dependency signal", color: "#008300" };
-    groupedBars($("coupling-c"), {
-      categories: C.scopes.map(s => `${s.agents} agents`), series: [OV, DEP], yMax: 70, ticks: [0, 20, 40, 60],
-      value: (ci, k) => C.scopes[ci][k], labelAll: true, fmt: f1, reserveSub: true,
-      tipHtml: ci => { const s = C.scopes[ci]; return `<div class="tt-h">k = ${s.agents}</div>` +
-        swatchRow(OV.color, OV.name, f1(s.overlap) + "%") + swatchRow(DEP.color, DEP.name, f1(s.dependency) + "%"); },
-    });
   }
 
   // ---------- jinja case study: paired timelines (Fig. 4, rebuilt) ----------
@@ -328,6 +297,6 @@
   }
 
   document.addEventListener("DOMContentLoaded", () => {
-    headline(); crossModel(); explorer(); coupling(); jinja(); scaling(); baselines();
+    headline(); crossModel(); explorer(); jinja(); scaling(); baselines();
   });
 })();

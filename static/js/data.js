@@ -1962,66 +1962,6 @@ window.STORM_DATA = {
    ]
   }
  },
- "coupling": {
-  "_source": "Fig. 3 of arXiv v1; unlabeled bars in (c) recovered from PDF geometry, calibrated so that k=4 dependency = 50.0 (text) and checked against k=4/k=8 overlap = 21.7/35.1 (text).",
-  "conflicts": [
-   {
-    "config": "GitWorktree (k=4)",
-    "pre": 0.0,
-    "post": 0.12,
-    "pass": 64.8
-   },
-   {
-    "config": "STORM (k=4)",
-    "pre": 0.94,
-    "post": 0.0,
-    "pass": 82.2
-   },
-   {
-    "config": "STORM (k=8)",
-    "pre": 2.94,
-    "post": 0.0,
-    "pass": 83.4
-   }
-  ],
-  "strata": [
-   {
-    "stratum": "Low",
-    "single": 77.7,
-    "worktree": 82.1,
-    "storm": 97.7
-   },
-   {
-    "stratum": "Medium",
-    "single": 81.6,
-    "worktree": 89.0,
-    "storm": 94.4
-   },
-   {
-    "stratum": "High",
-    "single": 59.5,
-    "worktree": 36.3,
-    "storm": 70.9
-   }
-  ],
-  "scopes": [
-   {
-    "agents": 2,
-    "overlap": 21.4,
-    "dependency": 61.1
-   },
-   {
-    "agents": 4,
-    "overlap": 21.7,
-    "dependency": 50.0
-   },
-   {
-    "agents": 8,
-    "overlap": 35.1,
-    "dependency": 33.7
-   }
-  ]
- },
  "scaling": {
   "_source": "Fig. 2 of arXiv v1 (value labels printed on the figure). max=1 is the single agent.",
   "points": [

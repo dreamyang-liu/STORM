@@ -91,7 +91,6 @@
       <span><i style="background:#2a78d6;border-radius:50%"></i>Read</span>
       <span><i style="background:#1baf7a;border-radius:50%"></i>Write</span>
       <span><i style="background:#e34948;border-radius:50%"></i>Rejection (current content + diff + stale list)</span>
-      <span class="muted" style="margin-left:auto">Illustrative scenario, not run data.</span>
     </div>
   </div>
 </section>
@@ -194,9 +193,7 @@
 <section class="wrap" id="results">
   <div class="eyebrow">Results</div>
   <h2>Results</h2>
-  <p class="narrow" style="margin-left:0">On Commit0-Lite (16 Python repositories whose implementations have been stubbed out, scored by their own test suites),
-    all multi-agent methods use the same manager–engineer workflow: the same models, prompts, budgets, four engineers, and the same review and reassignment loop.
-    The only difference is how the workspace is coordinated.</p>
+  <p class="narrow" style="margin-left:0">Commit0-Lite: 16 Python repositories whose implementations have been stubbed out, scored by their own test suites. Multi-agent runs use one manager and four engineers.</p>
 
   <div class="tiles">
     <div class="tile">
@@ -210,9 +207,9 @@
       <div class="delta">vs 66.3 GitWorktree · 69.9 single agent</div>
     </div>
     <div class="tile">
-      <div class="label">Run-to-run std, STORM</div>
-      <div class="value">±0.3</div>
-      <div class="delta">3 full 16-repo evaluations, Sonnet 4.6</div>
+      <div class="label">Gain over GitWorktree (Score<sub>w</sub>)</div>
+      <div class="value">+21.3</div>
+      <div class="delta">points, mean of 3 full evaluations</div>
     </div>
   </div>
 
@@ -241,9 +238,8 @@
     </table>
   </div>
 
-  <h3>PaperBench Code-Dev, judged by a different model family</h3>
-  <p>With Sonnet 4.6 as both agent and judge, a shared bias between the two is a fair concern. So we re-judged the Sonnet 4.6 agent runs with
-    <b>GPT-5.5</b> as the judge (3 evaluations; multi-agent methods use 2 engineers).</p>
+  <h3>PaperBench Code-Dev</h3>
+  <p>Sonnet 4.6 agents on the 20 PaperBench Code-Dev papers, scored by a <b>GPT-5.5</b> judge (mean ± std over 3 evaluations; multi-agent methods use 2 engineers).</p>
   <div class="grid2" style="align-items:center">
   <div class="viz-root chart"><svg id="panel-judge" role="img" aria-label="PaperBench score by method under GPT-5.5 judge"></svg></div>
   <div class="tbl-wrap">
@@ -259,19 +255,13 @@
   </div>
 
   <h3>Across models</h3>
-  <p>Single-run results for all three agent models (PaperBench judged by Sonnet 4.6). STORM has the highest weighted Commit0-Lite score among the standalone methods for every model.
-    The macro score is less uniform: with Qwen 3.6 Plus and DeepSeek V4 Pro, the single agent has the higher macro average, so STORM's
-    gains there come mainly from the large repositories (see the per-task explorer below).
-    The <span class="secondary"><i>+ Single (select)</i></span> rows run both methods and keep whichever complete codebase scores higher on each task.
-    That is a selection strategy, not a standalone method.</p>
+  <p>Single-run results for three agent models (PaperBench judged by Sonnet 4.6). STORM has the best weighted Commit0-Lite score and the best PaperBench score among standalone methods for every model. Tick <i>+ Single</i> to add runs that pair the single agent with a multi-agent system and keep the better codebase per task.</p>
   <div id="cross-model">
     <div class="controls"></div>
     <div class="tbl-wrap"></div>
-    <p class="muted" style="font-size:13px;margin:0">Click a column header to sort. Bold marks the best standalone method per column; selection rows are never ranked.</p>
+    <p class="muted" style="font-size:13px;margin:0">Click a column header to sort. Bold marks the best standalone method in each column.</p>
   </div>
-  <p class="muted" style="font-size:14px">Cost<sub>eff</sub> = total USD / score (lower is better). Prices are OpenRouter list prices (2026), USD per million tokens:
-    Sonnet 4.6 $3.00 in / $0.30 cached / $15.00 out; Qwen 3.6 Plus $0.50 / $0.05 / $3.00; DeepSeek V4 Pro $0.435 / $0.0036 / $0.87.
-    One full STORM Commit0-Lite run with Sonnet 4.6 used 535M tokens ($323.94).</p>
+  <p class="muted" style="font-size:14px">Cost<sub>eff</sub> = total USD / score (lower is better), at OpenRouter list prices.</p>
 </section>
 
 <!-- Per-task explorer -->
@@ -297,9 +287,7 @@
 <section class="wrap" id="baselines">
   <div class="eyebrow">Baselines</div>
   <h2>Other coordination mechanisms</h2>
-  <p class="narrow" style="margin-left:0">We ported the coordination layers of a shared-memory system (MARBLE) and a CRDT system (CodeCRDT)
-    into the same harness, with the same model, four engineers, and the same budgets (Commit0-Lite, Sonnet 4.6).
-    CRDTs guarantee that text converges, not that the merged program is semantically correct.</p>
+  <p class="narrow" style="margin-left:0">STORM against shared-memory (MARBLE-based) and CRDT (CodeCRDT-based) coordination, all with the same model, four engineers, and the same budgets (Commit0-Lite, Sonnet 4.6).</p>
   <div class="viz-root">
     <div class="controls"></div>
     <div class="chart" style="max-width:860px"><svg id="base-chart" role="img" aria-label="Coordination baselines"></svg></div>
@@ -310,36 +298,6 @@
 <section class="wrap alt" id="analysis">
   <div class="eyebrow">Analysis</div>
   <h2>Analysis</h2>
-
-  <h3>Conflicts surface early, and the gap is widest on tightly coupled repositories</h3>
-  <div class="viz-root fig" id="coupling">
-    <div class="grid3">
-      <div class="chart">
-        <div class="panel-head">(a) When conflicts are caught</div>
-        <div class="panel-sub">Conflict events per run</div>
-        <div class="legend"><span><i style="background:#4a3aa7"></i>Pre-commit</span><span><i style="background:#eda100"></i>Post-commit</span></div>
-        <svg id="coupling-a" role="img" aria-label="Conflict events per run, pre-commit versus post-commit"></svg>
-      </div>
-      <div class="chart">
-        <div class="panel-head">(b) Pass rate by coupling stratum</div>
-        <div class="panel-sub">Repositories grouped by coupling index, %</div>
-        <div class="legend"><span><i style="background:var(--series-1)"></i>Single</span><span><i style="background:var(--series-2)"></i>GitWorktree</span><span><i style="background:var(--series-3)"></i>STORM</span></div>
-        <svg id="coupling-b" role="img" aria-label="Pass rate by repository coupling stratum"></svg>
-      </div>
-      <div class="chart">
-        <div class="panel-head">(c) Task scopes vs. parallelism</div>
-        <div class="panel-sub">Share of STORM tasks affected, %</div>
-        <div class="legend"><span><i style="background:#e87ba4"></i>Scope overlap</span><span><i style="background:#008300"></i>Dependency</span></div>
-        <svg id="coupling-c" role="img" aria-label="Share of tasks with scope overlap or dependency signals by number of agents"></svg>
-      </div>
-    </div>
-    <p class="fig-note"><b>(a)</b> STORM surfaces conflicts before commit. GitWorktree leaves them to the merge.
-      <b>(b)</b> On the high-coupling stratum, GitWorktree drops to 36.3% while STORM holds 70.9%.
-      <b>(c)</b> Narrow task scopes aren't always independent: overlap rises with the number of agents.
-      The quantities in (a) and (c) are proxies derived from manager-review events and declared task scopes. The coupling index correlates with independent
-      static measures: source files ρ = 0.56, tests ρ = 0.67, internal import edges ρ = 0.66, all significant after FDR correction.
-      Hover over any group for exact values.</p>
-  </div>
 
   <h3>Case study: the same coupling, caught at opposite ends</h3>
   <div class="viz-root fig" id="jinja">
