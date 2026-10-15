@@ -52,7 +52,7 @@ cd ../STORM
 ```bash
 # Agent API (DashScope or OpenRouter)
 export LLM_API_KEY=<your-api-key>
-export LLM_BASE_URL=https://openrouter.ai/api/v1   # or https://dashscope.aliyuncs.com/compatible-mode/v1
+export LLM_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1   # or https://openrouter.ai/api/v1
 
 # Judge API (OpenRouter, for PaperBench evaluation)
 export OPENROUTER_API_KEY=<your-openrouter-key>

@@ -4,7 +4,7 @@
 
 # ===================== API Configuration =====================
 export LLM_API_KEY="${LLM_API_KEY:-}"
-export LLM_BASE_URL="${LLM_BASE_URL:-https://openrouter.ai/api/v1}"
+export LLM_BASE_URL="${LLM_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}"
 export OPENROUTER_API_KEY="${OPENROUTER_API_KEY:-$LLM_API_KEY}"
 export SDK_SOURCE_DIR="${SDK_SOURCE_DIR:-$(cd "$(dirname "$0")/.." && pwd)/software-agent-sdk}"
 

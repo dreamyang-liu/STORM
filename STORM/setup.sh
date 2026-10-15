@@ -118,7 +118,7 @@ if [ ! -f "$ENV_FILE" ]; then
 # DashScope: LLM_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 # OpenRouter: LLM_BASE_URL=https://openrouter.ai/api/v1
 export LLM_API_KEY=
-export LLM_BASE_URL=https://openrouter.ai/api/v1
+export LLM_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 
 # Judge API (OpenRouter for Claude judge: openrouter/anthropic/claude-sonnet-4.6)
 export OPENROUTER_API_KEY=
