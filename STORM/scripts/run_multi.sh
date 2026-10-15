@@ -22,7 +22,7 @@ dataset_path="data/commit0/commit0_combined_disk"
 
 # PaperBench settings
 paper_id="rice"
-judge_model="openrouter/anthropic/claude-sonnet-4-6"
+judge_model="openrouter/anthropic/claude-sonnet-4.6"
 test_max_depth=999
 test_reproduce_timeout=3600
 code_dev=true

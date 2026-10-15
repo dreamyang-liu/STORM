@@ -80,7 +80,7 @@ def run(
     paper_id,
     result_file,
     judge_type="simple",
-    judge_model="openrouter/anthropic/claude-sonnet-4-6",
+    judge_model="openrouter/anthropic/claude-sonnet-4.6",
     max_depth=999,
     code_dev=True,
     log_dir=None,

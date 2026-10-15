@@ -20,7 +20,7 @@ sub_iterations=80
 rounds_of_chat=2
 
 # PaperBench settings
-judge_model="openrouter/anthropic/claude-sonnet-4-6"
+judge_model="openrouter/anthropic/claude-sonnet-4.6"
 test_max_depth=999
 test_reproduce_timeout=3600
 code_dev=true

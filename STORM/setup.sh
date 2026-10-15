@@ -120,7 +120,7 @@ if [ ! -f "$ENV_FILE" ]; then
 export LLM_API_KEY=
 export LLM_BASE_URL=https://openrouter.ai/api/v1
 
-# Judge API (OpenRouter for Claude judge: openrouter/anthropic/claude-sonnet-4-6)
+# Judge API (OpenRouter for Claude judge: openrouter/anthropic/claude-sonnet-4.6)
 export OPENROUTER_API_KEY=
 
 # SDK source directory

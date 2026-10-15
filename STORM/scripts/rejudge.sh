@@ -10,7 +10,7 @@
 export OPENROUTER_API_KEY="${OPENROUTER_API_KEY:-$LLM_API_KEY}"
 
 # ===================== Configuration =====================
-judge_model="openrouter/anthropic/claude-sonnet-4-6"
+judge_model="openrouter/anthropic/claude-sonnet-4.6"
 max_parallel=4
 params="multi-agent/manageriters=50_subagents=2_subiters=80_rchats=2_codedev=true"
 
